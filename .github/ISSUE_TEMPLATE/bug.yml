@@ -1,0 +1,38 @@
+name: Relato de falha
+description: Registre um comportamento incorreto ou inesperado.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto
+      description: Informe sistema operacional, versão do Python e estado inicial da simulação.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Liste ações mínimas e dados de entrada, sem incluir credenciais ou imagens biométricas.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado observado
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificações
+      options:
+        - label: Removi dados pessoais, imagens e segredos do relato.
+          required: true
