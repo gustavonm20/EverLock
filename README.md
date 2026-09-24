@@ -73,6 +73,8 @@ O banco é criado em `data/everlock.sqlite3`, na pasta do projeto. Ele guarda o 
 
 As configurações opcionais são variáveis de ambiente:
 
+Defina-as no terminal quando necessário. O projeto não carrega arquivos `.env` automaticamente, e arquivos com esse prefixo são ignorados pelo Git para evitar a publicação acidental de configurações locais.
+
 | Variável | Padrão | Uso |
 |---|---|---|
 | `EVERLOCK_PORT` | `8000` | Porta do servidor local |
