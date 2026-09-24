@@ -1,0 +1,36 @@
+name: Nova funcionalidade
+description: Proponha uma melhoria alinhada ao roadmap do EverLock.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou necessidade
+      description: Qual cenário esta mudança deve atender?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Resultado esperado
+      description: Descreva o comportamento observável e os critérios de aceite.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área principal
+      options:
+        - Simulação
+        - Backend
+        - Interface
+        - Reconhecimento facial
+        - Segurança e privacidade
+        - Testes e documentação
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Observações e dependências
