@@ -6,8 +6,15 @@
     "door-position", "door-hint", "lock-position", "lock-hint", "last-update",
     "update-hint", "door-scene", "caption-dot", "door-summary", "scene-description",
     "release-description", "action-feedback", "event-count", "events",
+    "battery-percent", "battery-meter", "battery-detail", "mains-state", "device-state",
+    "power-profile", "battery-runtime", "power-notice", "virtual-time", "clock-state",
+    "clock-speed", "toggle-clock", "cut-power", "restore-power", "power-feedback",
   ].map((id) => [id, document.getElementById(id)]));
   const buttons = Array.from(document.querySelectorAll("[data-action]"));
+  const labControls = Array.from(document.querySelectorAll("#energia button, #energia input, #energia select"));
+  const configForm = document.getElementById("power-config-form");
+  const numberFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
+  let configLoaded = false;
   const clockFormat = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const dayFormat = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
   let lastState = null;
@@ -41,9 +48,54 @@
     return Number.isNaN(date.getTime()) ? "—" : clockFormat.format(date);
   }
 
-  function announce(message, outcome = "info") {
-    elements["action-feedback"].textContent = message;
-    elements["action-feedback"].dataset.outcome = outcome;
+  function announce(message, outcome = "info", target = "action-feedback") {
+    elements[target].textContent = message;
+    elements[target].dataset.outcome = outcome;
+  }
+
+  function duration(seconds) {
+    const total = Math.max(0, Math.floor(seconds));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    return `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(total % 60).padStart(2, "0")}s`;
+  }
+
+  function updatePower(state) {
+    const power = state.power;
+    const battery = power.battery;
+    const clock = state.simulation;
+    const labels = { normal: "Normal", low: "Baixa", critical: "Crítica", empty: "Esgotada" };
+    const profiles = { normal: "Normal", economy: "Econômico", off: "Residual" };
+    const off = state.device.status === "powered_off";
+    const recovering = state.device.status === "recovering";
+    elements["battery-percent"].textContent = `${numberFormat.format(battery.percent)}%`;
+    elements["battery-meter"].value = battery.percent;
+    elements["battery-meter"].dataset.level = battery.level;
+    const flow = battery.charging ? "Carregando" : battery.flow_w < 0 ? "Consumindo" : "Sem consumo da bateria";
+    elements["battery-detail"].textContent = `${numberFormat.format(battery.stored_wh)} / ${numberFormat.format(battery.capacity_wh)} Wh · ${labels[battery.level]} · ${flow}`;
+    elements["mains-state"].textContent = power.mains_available ? "Disponível" : "Cortada";
+    elements["device-state"].textContent = off ? "Desligado" : recovering ? "Reiniciando" : "Ligado";
+    elements["power-profile"].textContent = `${profiles[power.profile]} · ${numberFormat.format(power.load_w)} W`;
+    elements["battery-runtime"].textContent = duration(battery.runtime_seconds);
+    elements["power-notice"].dataset.state = state.device.status;
+    elements["power-notice"].textContent = off
+      ? "Dispositivo virtual desligado. Saída interna, chave e fechamento manuais continuam disponíveis. Restaure a alimentação para retomar."
+      : recovering ? `Recuperando por mais ${numberFormat.format(state.device.recovery_remaining_seconds)} segundos virtuais. ${clock.paused ? "Retome ou avance o tempo." : "Aguarde a inicialização."} A trava não será liberada.`
+      : power.mains_available
+        ? "A autonomia estima uma queda agora, sem novas liberações. A alimentação externa sustenta o dispositivo e a recarga."
+        : "Operando na bateria virtual. O modo econômico começa em 20%; o desligamento ocorre em 5%.";
+    elements["virtual-time"].textContent = duration(clock.elapsed_seconds);
+    elements["clock-state"].textContent = `${clock.paused ? "Pausado" : "Em andamento"} · velocidade ${clock.speed}×`;
+    elements["clock-speed"].value = String(clock.speed);
+    elements["toggle-clock"].textContent = clock.paused ? "Retomar tempo" : "Pausar tempo";
+    if (!configLoaded) {
+      for (const [name, value] of Object.entries(power.config)) {
+        const input = configForm.elements.namedItem(name === "efficiency" ? "efficiency_percent" : name);
+        if (input) input.value = name === "efficiency" ? value * 100 : value;
+      }
+      configForm.elements.namedItem("initial_percent").value = Math.round(battery.percent * 10) / 10;
+      configLoaded = true;
+    }
   }
 
   function refreshButtons() {
@@ -57,8 +109,18 @@
         if (button.dataset.action === "end_release") unavailable = !isReleased;
         if (["open", "exit", "key_entry"].includes(button.dataset.action)) unavailable = isOpen;
         if (button.dataset.action === "close") unavailable = !isOpen;
+        if (lastState.device.status !== "online" && ["unlock", "open", "end_release"].includes(button.dataset.action)) unavailable = true;
       }
       button.disabled = unavailable;
+    }
+    for (const control of labControls) {
+      let unavailable = !connected || !lastState || actionInProgress;
+      if (!unavailable) {
+        if (control.id === "cut-power") unavailable = !lastState.power.mains_available;
+        if (control.id === "restore-power") unavailable = lastState.power.mains_available;
+        if (control.dataset.step) unavailable = !lastState.simulation.paused;
+      }
+      control.disabled = unavailable;
     }
   }
 
@@ -77,6 +139,7 @@
       elements["lock-hint"].textContent = lastState ? "Informação desatualizada" : "Estado indisponível";
       elements["door-summary"].textContent = lastState ? "Última observação · desatualizada" : "Estado da porta indisponível";
       elements["scene-description"].textContent = "A visualização será atualizada quando a conexão voltar.";
+      elements["power-notice"].textContent = "Sem conexão com o laboratório. As leituras de energia exibidas podem estar desatualizadas.";
     }
     refreshButtons();
   }
@@ -95,7 +158,7 @@
     const remaining = Math.max(0, Number(door.release_remaining_seconds) || 0);
     const remainingLabel = `${remaining.toFixed(1).replace(".", ",")} s`;
 
-    elements.version.textContent = state.version || "0.1.0";
+    elements.version.textContent = state.version || "0.2.0";
     elements["door-position"].textContent = isOpen ? "Aberta" : "Fechada";
     elements["door-hint"].textContent = isOpen ? "Feche para concluir o acesso" : "Posição confirmada no simulador";
     elements["lock-position"].textContent = released ? "Liberada" : pending ? "Aguardando" : "Engatada";
@@ -110,9 +173,11 @@
     elements["scene-description"].textContent = isOpen
       ? "A porta precisa ser fechada para concluir o acesso."
       : released ? "Use “Abrir / entrar” antes que a liberação termine." : "Libere a entrada ou experimente o acesso manual.";
-    elements["release-description"].textContent = released
-      ? `Entrada liberada por mais ${remainingLabel}.`
-      : "Liberação temporária da trava virtual.";
+    elements["release-description"].textContent = state.device.status !== "online"
+      ? "Dispositivo virtual indisponível; acesso manual disponível."
+      : released ? `Entrada liberada por mais ${remainingLabel} virtuais${state.simulation.paused ? " (tempo pausado)" : ""}.`
+        : "Liberação de 3 segundos no relógio virtual.";
+    updatePower(state);
     setConnection(true);
   }
 
@@ -171,6 +236,11 @@
       const day = document.createElement("small");
       day.textContent = Number.isNaN(date.getTime()) ? "" : dayFormat.format(date);
       time.append(day);
+      if (typeof event.simulated_at === "number") {
+        const virtual = document.createElement("small");
+        virtual.textContent = `Virtual: ${duration(event.simulated_at)}`;
+        time.append(virtual);
+      }
       row.append(icon, copy, time);
       fragment.append(row);
     }
@@ -202,34 +272,37 @@
     }
   }
 
-  async function performAction(button) {
+  async function performAction(button, path = "/api/actions", payload = { action: button.dataset.action }, feedback = "action-feedback") {
     if (button.disabled || actionInProgress || !connected) return;
     actionInProgress = true;
     button.classList.add("is-busy");
     button.setAttribute("aria-busy", "true");
     refreshButtons();
     const sequence = ++statusRequestSequence;
-    announce("Enviando a ação ao simulador…");
+    announce("Enviando a ação ao simulador…", "info", feedback);
     try {
-      const { response, body } = await request("/api/actions", {
+      const { response, body } = await request(path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: button.dataset.action }),
+        body: JSON.stringify(payload),
       });
       if (body.state) applyState(body.state, sequence);
       if (response.ok && body.ok) {
-        announce(body.message || "Ação concluída no simulador.", "success");
+        announce(body.message || "Ação concluída no simulador.", "success", feedback);
       } else if (response.status === 409) {
-        announce(body.message || "A ação não pode ser realizada no estado atual.", "denied");
+        announce(body.message || "A ação não pode ser realizada no estado atual.", "denied", feedback);
+      } else if (response.status === 422) {
+        const detail = Array.isArray(body.detail) ? body.detail.map((item) => item.msg).join(" ") : "Revise os valores informados.";
+        announce(`Confira os parâmetros: ${detail}`, "error", feedback);
       } else {
-        announce("A ação não foi confirmada. Confira o estado da porta antes de tentar novamente.", "error");
+        announce("A ação não foi confirmada. Confira o estado antes de tentar novamente.", "error", feedback);
       }
     } catch {
       if (sequence >= lastAppliedRequest) {
         lastAppliedRequest = sequence;
         setConnection(false);
       }
-      announce("Não foi possível confirmar a ação. Ela não será reenviada automaticamente.", "error");
+      announce("Não foi possível confirmar a ação. Ela não será reenviada automaticamente.", "error", feedback);
     } finally {
       actionInProgress = false;
       button.classList.remove("is-busy");
@@ -250,6 +323,22 @@
   }
 
   for (const button of buttons) button.addEventListener("click", () => performAction(button));
+  const labAction = (button, route, payload) => performAction(button, `/api/simulation/${route}`, payload, "power-feedback");
+  elements["cut-power"].addEventListener("click", () => labAction(elements["cut-power"], "power", { mains_available: false }));
+  elements["restore-power"].addEventListener("click", () => labAction(elements["restore-power"], "power", { mains_available: true }));
+  elements["toggle-clock"].addEventListener("click", () => labAction(elements["toggle-clock"], "clock", { paused: !lastState.simulation.paused }));
+  elements["clock-speed"].addEventListener("change", () => labAction(elements["clock-speed"], "clock", { speed: Number(elements["clock-speed"].value) }));
+  for (const button of document.querySelectorAll("[data-step]")) {
+    button.addEventListener("click", () => labAction(button, "clock", { advance_seconds: Number(button.dataset.step) }));
+  }
+  configForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!connected || actionInProgress || !configForm.reportValidity()) return;
+    const payload = Object.fromEntries(Array.from(new FormData(configForm), ([key, value]) => [key, Number(value)]));
+    payload.efficiency = payload.efficiency_percent / 100;
+    delete payload.efficiency_percent;
+    labAction(document.getElementById("apply-power-config"), "power/config", payload);
+  });
   for (const link of document.querySelectorAll(".nav-link")) {
     link.addEventListener("click", () => {
       for (const item of document.querySelectorAll(".nav-link")) {
