@@ -2,9 +2,9 @@
 
 O trabalho será executado em incrementos pela IA, com implementação, testes, correções e documentação em cada etapa. A equipe avalia os resultados, informa exigências acadêmicas e, quando necessário, fornece imagens autorizadas.
 
-## Situação da primeira entrega
+## Situação atual
 
-A base executável, a interface inicial, a persistência e os controles essenciais da porta virtual fazem parte desta entrega. Isso inicia a etapa 1 e antecipa parte da etapa 2. Os demais módulos continuam planejados.
+A base e a porta virtual estão entregues. O motor de energia e o botão de tema estão implementados nesta versão, com validação registrada em [status.md](status.md). O quadro detalhado fica em [planning.md](planning.md).
 
 | Etapa | Entrega | Critério de conclusão |
 |---|---|---|
@@ -21,7 +21,7 @@ A base executável, a interface inicial, a persistência e os controles essencia
 
 ## Próximo incremento
 
-Consolidar os testes da porta e acrescentar o motor de energia. Antes de implementar aceleração do tempo, definir um único relógio de simulação para liberação, bateria e comandos demonstrativos. As sessões de login, quando existirem, deverão usar tempo real.
+Acrescentar contas e permissões: primeiro administrador sem senha padrão, login, sessão, cadastro, desativação e histórico com autoria. As sessões deverão usar tempo real, independente das pausas e acelerações da simulação. Autorização será aplicada no backend, inclusive quando alguém chamar a API diretamente.
 
 A energia será expressa em Wh, com parâmetros didáticos explícitos. Seus resultados não serão apresentados como medições de bateria real. Desligar o computador continua encerrando a aplicação.
 
