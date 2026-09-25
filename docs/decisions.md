@@ -22,7 +22,7 @@ Entregar primeiro inicialização, interface, porta virtual e histórico. Login,
 
 ## 4. Estado controlado pelo servidor
 
-O backend decide se a porta pode abrir. Liberação, posição da porta e resultado de ações são conceitos separados. O prazo inicial de liberação é de três segundos e usa tempo monotônico no servidor.
+O backend decide se a porta pode abrir. Liberação, posição da porta e resultado de ações são conceitos separados. O prazo de liberação é de três segundos virtuais. Desde a etapa de energia, um relógio comum controla porta, bateria e recuperação, alimentado pelo tempo monotônico do servidor.
 
 Ao reiniciar, recuperar a posição da porta e encerrar a liberação anterior. Nunca repetir uma abertura porque havia uma ação em andamento antes do encerramento.
 
@@ -45,3 +45,11 @@ A automação poderá gerar alertas e relatórios depois do sistema principal. N
 ## 8. Desenvolvimento e verificação pela IA
 
 A IA implementa, executa testes, corrige falhas e documenta. A equipe avalia a demonstração e fornece informações que não podem ser inferidas, como exigências da instituição e imagens autorizadas. O registro de progresso deve distinguir funções implementadas, verificações realizadas e trabalho pendente.
+
+## 9. Energia didática e recuperável
+
+Usar Wh, contabilizar a eficiência uma vez e separar consumo normal, econômico, residual e adicional durante a liberação. O modelo troca para economia em 20% e desliga em 5%; restaurar alimentação inicia recuperação de dois segundos virtuais sem liberar a trava. Parâmetros são hipóteses de laboratório, sem promessa de autonomia física. O estado reinicia pausado, evitando interpretar horas sem processo como simulação executada.
+
+## 10. Tema no navegador
+
+Oferecer sol/lua sem dependências novas. Salvar a escolha localmente e seguir o tema do sistema quando ainda não houver preferência. A escolha visual não participa de autorização nem modifica dados da simulação.
