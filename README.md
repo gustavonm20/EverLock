@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml)
 
-Simulador de controle de acesso desenvolvido em Python. Esta primeira entrega permite operar uma porta virtual pelo navegador e consultar o histórico de eventos salvo em SQLite.
+Simulador de controle de acesso desenvolvido em Python. Permite operar uma porta virtual, testar quedas de energia e consultar o histórico de eventos salvo em SQLite.
 
 Tudo relacionado à porta, à trava e à chave é virtual. Não há integração com fechaduras físicas.
 
@@ -43,12 +43,15 @@ O pacote inclui todo o código-fonte, interface, testes e documentação desta e
 - Impede a abertura externa quando a trava está engatada.
 - Permite fechar a porta, usar a chave simulada e demonstrar a saída interna.
 - Registra ações e resultados no banco local.
+- Simula bateria em Wh, consumo, recarga, economia, desligamento e recuperação.
+- Permite pausar, acelerar ou avançar o tempo da porta e da bateria juntos.
+- Alterna entre tema claro e escuro pelo botão de sol/lua, salvando a escolha no navegador.
 - Mantém as regras no servidor: fechar a página não prolonga a liberação.
-- Ao reiniciar, encerra a liberação anterior e recupera a última posição registrada da porta.
+- Ao reiniciar, encerra a liberação anterior, recupera o cenário salvo e deixa o tempo pausado em 1×.
 
 **Liberar a trava não abre a porta.** Depois da liberação, use a ação de entrada. Se o prazo acabar com a porta aberta, ela aguarda fechamento; o painel não deve indicar que está protegida.
 
-A chave simulada e a saída interna representam métodos manuais. Seus botões alteram somente a simulação.
+A chave simulada e a saída interna representam métodos manuais. Seus botões alteram somente a simulação e continuam disponíveis com o dispositivo virtual desligado. Os três segundos de liberação usam o relógio virtual: pausar congela o prazo; acelerar também o encurta no tempo real.
 
 ## Demonstração rápida
 
@@ -59,9 +62,11 @@ A chave simulada e a saída interna representam métodos manuais. Seus botões a
 5. Experimente a saída interna e a chave simulada.
 6. Confira o histórico e reinicie a aplicação para verificar a persistência.
 
+Para demonstrar energia, pause o relógio, corte a alimentação e avance seis horas. Observe o desligamento, experimente a saída manual e restaure a alimentação. Avance três segundos para concluir a recuperação sem desbloqueio automático. Os parâmetros e cálculos estão em [Energia virtual](docs/energy.md).
+
 ## Limites desta entrega
 
-Ainda não há login, cadastro de pessoas, reconhecimento facial, bateria simulada, falhas de conexão ou integração com n8n. Essas funções estão no roteiro de desenvolvimento; botões ou indicadores desta versão não devem ser apresentados como implementação dessas etapas.
+Ainda não há login, cadastro de pessoas, reconhecimento facial, cenários independentes de falhas de conexão ou integração com n8n. Essas funções estão no roteiro de desenvolvimento; não devem ser apresentadas como prontas.
 
 O servidor fica restrito ao próprio computador, em `127.0.0.1`. Como ainda não há autenticação, não o exponha à rede nem à internet. Esta etapa não exige coleta de imagens ou outros dados pessoais.
 
@@ -98,11 +103,13 @@ Execute na pasta do projeto, depois da instalação:
 .\.venv\Scripts\python.exe -m ruff check .
 ```
 
-Os testes devem cobrir as regras da porta, o prazo de liberação, as rotas e a recuperação do estado. A verificação visual no navegador complementa esses testes.
+Os testes cobrem regras da porta, prazo de liberação, rotas, energia, relógio, migração do banco e recuperação do estado. A verificação visual no navegador complementa esses testes.
 
 ## Documentação
 
 - [Arquitetura](docs/architecture.md)
+- [Planejamento e critérios de aceite](docs/planning.md)
+- [Energia virtual e roteiro de demonstração](docs/energy.md)
 - [API local](docs/api.md)
 - [Etapas de desenvolvimento](docs/roadmap.md)
 - [Estado atual](docs/status.md)

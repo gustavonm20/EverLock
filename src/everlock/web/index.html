@@ -3,17 +3,21 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light">
+    <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#174f49">
     <meta name="description" content="EverLock: laboratório de controle de acesso com uma porta inteiramente virtual.">
     <title>EverLock · Laboratório de acesso</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <script src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/theme.css">
     <script src="/static/app.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Pular para o conteúdo</a>
     <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+      <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></symbol>
       <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
       <symbol id="icon-door" viewBox="0 0 24 24"><path d="M5 21V3h14v18M3 21h18M15 12h.01"/></symbol>
       <symbol id="icon-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
@@ -36,20 +40,21 @@
       <div class="sidebar-section-label">ESPAÇO DE TRABALHO</div>
       <nav class="navigation">
         <a class="nav-link active" href="#simulador" aria-current="location"><svg class="icon"><use href="#icon-door"/></svg>Simulador</a>
+        <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Energia</a>
         <a class="nav-link" href="#atividade"><svg class="icon"><use href="#icon-activity"/></svg>Atividade</a>
-        <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Próximas etapas</a>
+        <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Etapas</a>
       </nav>
       <div class="sidebar-bottom">
         <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.1.0</span></span>
+        <span class="version">Versão <span id="version">0.2.0</span></span>
       </div>
     </aside>
 
     <div class="workspace">
       <header class="topbar">
         <span class="breadcrumb">EverLock <span>/</span> Visão geral</span>
-        <span class="simulation-badge"><svg class="icon"><use href="#icon-info"/></svg>Ambiente de simulação</span>
+        <div class="topbar-actions"><span class="simulation-badge"><svg class="icon"><use href="#icon-info"/></svg>Ambiente de simulação</span><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Ativar tema escuro"><svg class="icon theme-moon" aria-hidden="true"><use href="#icon-moon"/></svg><svg class="icon theme-sun" aria-hidden="true"><use href="#icon-sun"/></svg></button></div>
       </header>
 
       <main id="main">
@@ -91,18 +96,64 @@
           </div>
         </section>
 
+        <section class="energy-card" id="energia" aria-labelledby="energy-title">
+          <div class="section-heading"><div><p class="eyebrow">LABORATÓRIO DE FALHAS</p><h2 id="energy-title">E quando a energia acaba?</h2></div><span class="subtle-badge">Bateria virtual</span></div>
+          <p class="section-description">Corte a alimentação, avance o tempo e acompanhe a reserva. Os valores são didáticos: a bateria virtual não mantém o computador ligado.</p>
+          <div class="energy-grid">
+            <div class="power-readings">
+              <div class="battery-heading"><span>Carga da bateria</span><strong id="battery-percent">—</strong></div>
+              <progress id="battery-meter" max="100" value="0" aria-label="Carga da bateria virtual"></progress>
+              <p id="battery-detail">Aguardando a primeira leitura.</p>
+              <dl class="power-metrics">
+                <div><dt>Alimentação externa</dt><dd id="mains-state">—</dd></div>
+                <div><dt>Dispositivo virtual</dt><dd id="device-state">—</dd></div>
+                <div><dt>Perfil / consumo</dt><dd id="power-profile">—</dd></div>
+                <div><dt>Autonomia até desligar</dt><dd id="battery-runtime">—</dd></div>
+              </dl>
+              <p class="energy-notice" id="power-notice" role="status">Aguardando o estado da energia.</p>
+              <div class="button-pair"><button type="button" id="cut-power" class="button button-secondary" disabled>Cortar alimentação</button><button type="button" id="restore-power" class="button button-secondary" disabled>Restaurar alimentação</button></div>
+            </div>
+            <div class="clock-controls">
+              <p class="eyebrow">TEMPO DE SIMULAÇÃO</p>
+              <strong class="virtual-clock" id="virtual-time">00h 00m 00s</strong>
+              <p id="clock-state">Aguardando o relógio.</p>
+              <div class="clock-settings"><button type="button" id="toggle-clock" class="button button-secondary" disabled>Pausar</button><label for="clock-speed">Velocidade<select id="clock-speed" disabled><option value="1">1×</option><option value="60">60×</option><option value="600">600×</option></select></label></div>
+              <p class="clock-help">Pause para avançar um intervalo. Porta e bateria usam o mesmo relógio: a pausa e a velocidade também afetam a liberação de 3 segundos.</p>
+              <div class="step-buttons"><button type="button" class="button button-quiet" data-step="3" disabled>+3 segundos</button><button type="button" class="button button-quiet" data-step="3600" disabled>+1 hora</button><button type="button" class="button button-quiet" data-step="21600" disabled>+6 horas</button></div>
+              <p class="clock-help">Em 20% de carga, entra o modo econômico. Em 5%, o dispositivo desliga. A reserva restante só alimenta o consumo residual configurado.</p>
+            </div>
+          </div>
+          <div class="action-feedback" id="power-feedback" role="status" aria-live="polite" aria-atomic="true">Prepare um cenário ou corte a alimentação para começar.</div>
+          <details class="power-parameters"><summary>Parâmetros do cenário</summary>
+            <form id="power-config-form">
+              <div class="parameter-grid">
+                <label>Capacidade (Wh)<input name="capacity_wh" type="number" min="1" max="1000" step="0.1" value="40" required disabled></label>
+                <label>Carga inicial (%)<input name="initial_percent" type="number" min="0" max="100" step="0.1" value="100" required disabled></label>
+                <label>Consumo normal (W)<input name="normal_load_w" type="number" min="0.1" max="100" step="0.1" value="8" required disabled></label>
+                <label>Consumo econômico (W)<input name="economy_load_w" type="number" min="0.1" max="100" step="0.1" value="4" required disabled></label>
+                <label>Extra durante liberação (W)<input name="actuator_extra_w" type="number" min="0" max="100" step="0.1" value="12" required disabled></label>
+                <label>Consumo desligado (W)<input name="standby_load_w" type="number" min="0" max="1" step="0.01" value="0.1" required disabled></label>
+                <label>Potência para recarga (W)<input name="charge_power_w" type="number" min="0.1" max="100" step="0.1" value="10" required disabled></label>
+                <label>Eficiência (%)<input name="efficiency_percent" type="number" min="50" max="100" step="1" value="90" required disabled></label>
+              </div>
+              <p class="clock-help">Aplicar restaura a alimentação, redefine a carga, pausa o tempo em 1× e encerra a liberação. A posição da porta e o histórico são mantidos. O consumo extra só vale durante a liberação; a potência de recarga é adicional ao consumo do dispositivo.</p>
+              <button type="submit" class="button button-secondary" id="apply-power-config" disabled>Preparar cenário e pausar</button>
+            </form>
+          </details>
+        </section>
+
         <section class="activity-card" id="atividade" aria-labelledby="activity-title">
           <div class="section-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2 id="activity-title">Atividade recente</h2></div><span class="subtle-badge" id="event-count">Carregando</span></div>
-          <p class="section-description">Um registro de cada ação e do que aconteceu com a porta.</p>
+          <p class="section-description">Ações da porta e transições de energia, com data real e instante virtual.</p>
           <div id="events" class="events-list" aria-busy="true"><div class="empty-state">Carregando o histórico…</div></div>
           <div class="history-footer"><svg class="icon"><use href="#icon-check"/></svg>Histórico salvo neste computador.</div>
         </section>
 
         <section id="evolucao" class="roadmap" aria-labelledby="roadmap-title">
           <div class="section-heading"><div><p class="eyebrow">CONSTRUÍDO EM ETAPAS</p><h2 id="roadmap-title">A base de algo maior.</h2></div><span class="subtle-badge">Em desenvolvimento</span></div>
-          <p class="section-description">A porta virtual e o histórico já fazem parte desta versão. Os módulos abaixo serão adicionados nas próximas etapas.</p>
+          <p class="section-description">Porta, energia virtual e histórico já fazem parte desta versão. O próximo passo é gerenciar pessoas e permissões.</p>
           <div class="roadmap-grid">
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emergência</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Próxima etapa</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emergência</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Disponível no laboratório</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permissões</h3><p>Contas, autorizações e gerenciamento de quem pode entrar.</p><span class="future-label">Planejado</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-face"/></svg></span><h3>Reconhecimento facial</h3><p>Identificação por imagens integrada às regras de acesso.</p><span class="future-label">Planejado</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-network"/></svg></span><h3>Falhas de conexão</h3><p>Cenários de indisponibilidade, atraso e reconexão do dispositivo.</p><span class="future-label">Planejado</span></article>

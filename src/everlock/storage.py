@@ -1,9 +1,14 @@
 """Estado e eventos são gravados juntos, em uma transação SQLite."""
 
+import json
+import math
 import sqlite3
+from dataclasses import asdict
 from pathlib import Path
 
 from everlock.domain import Door, Event
+from everlock.energy import Power, PowerConfig
+from everlock.simulation import Timeline
 
 
 class Storage:
@@ -29,7 +34,16 @@ class Storage:
                 outcome TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS simulation_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                power_json TEXT NOT NULL,
+                timeline_json TEXT NOT NULL
+            );
         """)
+        columns = {row["name"] for row in self.connection.execute("PRAGMA table_info(events)")}
+        if "simulated_at" not in columns:
+            self.connection.execute("ALTER TABLE events ADD COLUMN simulated_at REAL")
+            self.connection.commit()
 
     def load(self) -> Door:
         row = self.connection.execute("SELECT * FROM door_state WHERE id=1").fetchone()
@@ -40,7 +54,24 @@ class Storage:
             position=row["position"], revision=row["revision"], updated_at=row["updated_at"],
         )
 
-    def save(self, door: Door, event: Event) -> None:
+    def load_simulation(self) -> tuple[Power, Timeline]:
+        row = self.connection.execute("SELECT * FROM simulation_state WHERE id=1").fetchone()
+        if row is None:
+            return Power(), Timeline()
+        values = json.loads(row["power_json"])
+        config = PowerConfig(**values.pop("config"))
+        power = Power(config=config, **values)
+        timeline = Timeline(**json.loads(row["timeline_json"]))
+        if not math.isfinite(power.stored_wh) or not 0 <= power.stored_wh <= config.capacity_wh:
+            raise ValueError("Carga virtual salva fora dos limites.")
+        if not math.isfinite(timeline.elapsed_seconds) or timeline.elapsed_seconds < 0:
+            raise ValueError("Tempo virtual salvo fora dos limites.")
+        # Tempo com o processo fechado não é simulado. Retorno sempre pausado e em 1x.
+        timeline.paused = True
+        timeline.speed = 1
+        return power, timeline
+
+    def save(self, door: Door, events: list[Event], power: Power, timeline: Timeline) -> None:
         with self.connection:
             self.connection.execute(
                 """INSERT INTO door_state (id, position, revision, updated_at) VALUES (1, ?, ?, ?)
@@ -49,10 +80,17 @@ class Storage:
                 (door.position, door.revision, door.updated_at),
             )
             self.connection.execute(
-                """INSERT INTO events (type, title, detail, source, outcome, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (event.type, event.title, event.detail, event.source,
-                 event.outcome, door.updated_at),
+                """INSERT INTO simulation_state VALUES (1, ?, ?)
+                   ON CONFLICT(id) DO UPDATE SET power_json=excluded.power_json,
+                   timeline_json=excluded.timeline_json""",
+                (json.dumps(asdict(power)), json.dumps(asdict(timeline))),
+            )
+            self.connection.executemany(
+                """INSERT INTO events
+                   (type, title, detail, source, outcome, created_at, simulated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                [(event.type, event.title, event.detail, event.source, event.outcome,
+                  door.updated_at, event.simulated_at) for event in events],
             )
 
     def events(self, limit: int) -> list[dict]:

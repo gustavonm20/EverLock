@@ -17,7 +17,7 @@ def test_health_status_and_assets(client):
     status = client.get("/api/status").json()
     assert status["door"]["secured"]
     assert status["capabilities"] == {
-        "door": True, "power": False, "connectivity": False,
+        "door": True, "power": True, "connectivity": False,
         "face_recognition": False, "authentication": False,
     }
     page = client.get("/")
@@ -93,3 +93,51 @@ def test_background_task_expires_release_without_another_request(tmp_path):
         clock[0] = 103.0
         client.portal.call(asyncio.sleep, 0.25)
         assert app.state.controller.door.secured
+
+
+def test_power_scenario_through_api(tmp_path):
+    with TestClient(create_app(tmp_path / "power.sqlite3", clock=lambda: 0),
+                    base_url="http://localhost") as client:
+        assert client.post("/api/simulation/power/config", json={}).status_code == 200
+        cut = client.post("/api/simulation/power", json={"mains_available": False})
+        assert cut.status_code == 200
+        result = client.post("/api/simulation/clock", json={"advance_seconds": 86400})
+        assert result.status_code == 200
+        state = result.json()["state"]
+        assert state["device"]["status"] == "powered_off"
+        assert state["power"]["battery"]["stored_wh"] == 0
+        assert client.get("/api/health").json()["status"] == "ok"
+        assert client.post("/api/actions", json={"action": "unlock"}).status_code == 409
+        assert client.post("/api/actions", json={"action": "exit"}).status_code == 200
+        result = client.post("/api/simulation/power", json={"mains_available": True}).json()
+        assert result["state"]["device"]["status"] == "recovering"
+        assert result["state"]["door"]["lock"] == "pending_close"
+        assert result["state"]["door"]["release_remaining_seconds"] == 0
+        result = client.post("/api/simulation/clock", json={"advance_seconds": 2}).json()
+        assert result["state"]["device"]["status"] == "online"
+        assert result["state"]["door"]["release_remaining_seconds"] == 0
+
+
+@pytest.mark.parametrize("path, payload", [
+    ("clock", {}), ("clock", {"speed": 100000}), ("clock", {"speed": True}),
+    ("clock", {"paused": "yes"}), ("clock", {"advance_seconds": -1}),
+    ("clock", {"advance_seconds": 86401}), ("clock", {"speed": 60, "paused": True}),
+    ("clock", {"advance_seconds": "Infinity"}),
+    ("power", {"mains_available": "false"}),
+    ("power/config", {"capacity_wh": 0}),
+    ("power/config", {"economy_load_w": 90}),
+    ("power/config", {"initial_percent": 101}),
+    ("power/config", {"efficiency": "NaN"}),
+])
+def test_invalid_simulation_payloads_are_rejected(client, path, payload):
+    before = client.get("/api/status").json()
+    assert client.post(f"/api/simulation/{path}", json=payload).status_code == 422
+    after = client.get("/api/status").json()
+    assert after["revision"] == before["revision"]
+    assert after["power"] == before["power"]
+
+
+def test_power_configuration_rejects_cross_origin_requests(client):
+    result = client.post("/api/simulation/power/config", json={},
+                         headers={"Origin": "https://outside.example"})
+    assert result.status_code == 403
