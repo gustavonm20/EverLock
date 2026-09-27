@@ -1,6 +1,6 @@
 # Estado do projeto
 
-Atualizado em 24 de setembro de 2026.
+Atualizado em 27 de setembro de 2026. Incremento 0.3 em revisão no [PR #14](https://github.com/gustavonm20/EverLock/pull/14).
 
 ## Entregue e verificado
 
@@ -13,7 +13,7 @@ Atualizado em 24 de setembro de 2026.
 - Contrato de API local, iniciador do Windows e configuração do VS Code.
 - Testes automatizados das regras, API, concorrência, persistência e fronteira do prazo.
 
-## Incremento em validação
+## Implementado no incremento 0.3
 
 - Energia em Wh: consumo normal/econômico/residual, pulso de liberação, perdas e recarga.
 - Relógio único com pausa, aceleração e avanço manual.
@@ -22,17 +22,24 @@ Atualizado em 24 de setembro de 2026.
 - Persistência do cenário, migração aditiva e reinício pausado.
 - Temas claro/escuro com sol/lua e preferência salva no navegador.
 - Planejamento por entregas, dependências e critérios em [planning.md](planning.md).
+- Login obrigatório, administrador inicial, papéis e cadastro com aprovação administrativa.
+- Senha com mínimo de 6 caracteres, maiúscula, minúscula, número e símbolo; sem máximo.
+- Sessões de oito horas reais, logout, troca de senha, revogação e recuperação local.
+- Histórico com autoria, limite de tentativas e proteção do último administrador ativo.
+- Contrato de observações do nobreak separado da bateria virtual; nenhum driver real instalado.
+- [Planejamento no Notion](https://app.notion.com/p/3e7e2dde06ab81f68b2ece96ce4a61a2) com Kanban, prioridades e dependências.
 
-Verificação estática aprovada. Uma rodada intermediária passou em 72 testes; a rodada final deve incluir os acréscimos de consumo de atuação e recuperação. O resultado definitivo será registrado após a execução da automação do repositório e da verificação visual.
+**101 testes aprovados** na suíte local completa, incluindo cadastro pendente/aprovação, política de senha, senha longa sem truncamento, compatibilidade de contas anteriores, recuperação por terminal e separação entre nobreak e simulação. Ruff e a verificação de diferenças também passaram. Há um aviso de descontinuação do cliente HTTP de testes, já acompanhado na [issue #13](https://github.com/gustavonm20/EverLock/issues/13); não houve falha de teste.
 
-## Próximo objetivo
+A interface de contas e os temas foram conferidos em computador e celular (390 × 844), incluindo persistência do tema e ausência de rolagem horizontal. O CI de energia e tema passou no GitHub; a execução do incremento completo pode ser consultada no PR.
 
-Contas, login, papéis, revogação e histórico administrativo. Sessões terão expiração pelo tempo real, independente do relógio da simulação.
+## Ponto de parada solicitado
+
+Após cadastro, senha, documentação e proteção das branches, não iniciar outra etapa sem nova solicitação. Comandos e conectividade permanecem no backlog.
 
 ## Ainda não implementado
 
-- Contas, login, papéis e permissões.
-- Cadastro, revogação e políticas de acesso.
+- Identidades biométricas separadas das contas e políticas de acesso por horário.
 - Protocolo de comandos remotos com validade, idempotência e confirmação.
 - Falhas de internet, rede local e dispositivo como cenários independentes.
 - Cadastro e reconhecimento facial real.
@@ -40,5 +47,10 @@ Contas, login, papéis, revogação e histórico administrativo. Sessões terão
 - Consentimento, retenção e exclusão de dados biométricos.
 - Notificações e relatórios opcionais por n8n.
 - Empacotamento e roteiro final de apresentação.
+- Driver e medições reais do nobreak; dependem de marca/modelo e sistema operacional.
+
+## Escopo físico atualizado
+
+O grupo comprará somente um nobreak pronto para sustentar o computador. Porta, trava e sensores continuam virtuais. Marca/modelo, valor e autonomia não foram informados. A leitura real permanece indisponível até existir integração compatível; a bateria didática não será usada como substituta dessas informações.
 
 Consulte [roadmap.md](roadmap.md) para as etapas e critérios de conclusão.
