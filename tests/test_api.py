@@ -6,9 +6,16 @@ from fastapi.testclient import TestClient
 from everlock.app import create_app
 
 
+def sign_in(client):
+    data = {"username": "admin", "password": "Senha somente para testes1!"}
+    assert client.post("/api/auth/setup", json=data).status_code == 201
+    assert client.post("/api/auth/login", json=data).status_code == 200
+
+
 @pytest.fixture
 def client(tmp_path):
     with TestClient(create_app(tmp_path / "api.sqlite3"), base_url="http://localhost") as client:
+        sign_in(client)
         yield client
 
 
@@ -18,7 +25,7 @@ def test_health_status_and_assets(client):
     assert status["door"]["secured"]
     assert status["capabilities"] == {
         "door": True, "power": True, "connectivity": False,
-        "face_recognition": False, "authentication": False,
+        "face_recognition": False, "authentication": True,
     }
     page = client.get("/")
     assert page.status_code == 200
@@ -89,6 +96,7 @@ def test_background_task_expires_release_without_another_request(tmp_path):
     clock = [100.0]
     app = create_app(tmp_path / "timer.sqlite3", clock=lambda: clock[0])
     with TestClient(app, base_url="http://localhost") as client:
+        sign_in(client)
         client.post("/api/actions", json={"action": "unlock"})
         clock[0] = 103.0
         client.portal.call(asyncio.sleep, 0.25)
@@ -98,6 +106,7 @@ def test_background_task_expires_release_without_another_request(tmp_path):
 def test_power_scenario_through_api(tmp_path):
     with TestClient(create_app(tmp_path / "power.sqlite3", clock=lambda: 0),
                     base_url="http://localhost") as client:
+        sign_in(client)
         assert client.post("/api/simulation/power/config", json={}).status_code == 200
         cut = client.post("/api/simulation/power", json={"mains_available": False})
         assert cut.status_code == 200
