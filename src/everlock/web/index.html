@@ -11,7 +11,9 @@
     <script src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/theme.css">
+    <link rel="stylesheet" href="/static/auth.css">
     <script src="/static/app.js" defer></script>
+    <script src="/static/auth.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Pular para o conteúdo</a>
@@ -41,23 +43,40 @@
       <nav class="navigation">
         <a class="nav-link active" href="#simulador" aria-current="location"><svg class="icon"><use href="#icon-door"/></svg>Simulador</a>
         <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Energia</a>
-        <a class="nav-link" href="#atividade"><svg class="icon"><use href="#icon-activity"/></svg>Atividade</a>
+        <a class="nav-link" href="#atividade" data-admin><svg class="icon"><use href="#icon-activity"/></svg>Atividade</a>
+        <a class="nav-link" href="#contas"><svg class="icon"><use href="#icon-users"/></svg>Conta</a>
         <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Etapas</a>
       </nav>
       <div class="sidebar-bottom">
         <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.2.0</span></span>
+        <span class="version">Versão <span id="version">0.3.0</span></span>
       </div>
     </aside>
 
     <div class="workspace">
       <header class="topbar">
         <span class="breadcrumb">EverLock <span>/</span> Visão geral</span>
-        <div class="topbar-actions"><span class="simulation-badge"><svg class="icon"><use href="#icon-info"/></svg>Ambiente de simulação</span><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Ativar tema escuro"><svg class="icon theme-moon" aria-hidden="true"><use href="#icon-moon"/></svg><svg class="icon theme-sun" aria-hidden="true"><use href="#icon-sun"/></svg></button></div>
+        <div class="topbar-actions"><span class="session-label" id="session-label"></span><button class="text-button" id="logout" type="button" hidden>Sair</button><span class="simulation-badge"><svg class="icon"><use href="#icon-info"/></svg>Simulação</span><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Ativar tema escuro"><svg class="icon theme-moon" aria-hidden="true"><use href="#icon-moon"/></svg><svg class="icon theme-sun" aria-hidden="true"><use href="#icon-sun"/></svg></button></div>
       </header>
 
-      <main id="main">
+      <section class="auth-panel" id="auth-panel" aria-labelledby="auth-title">
+        <p class="eyebrow">ACESSO LOCAL</p><h1 id="auth-title">Entre no EverLock</h1>
+        <p id="auth-description">Verificando a configuração deste computador…</p>
+        <form id="login-form" class="account-form">
+          <label>Usuário<input name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+" placeholder="Seu nome de usuário"></label>
+          <label>Senha<input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Sua senha" aria-describedby="password-rules"></label>
+          <p id="password-rules" class="password-rules" hidden>No mínimo 6 caracteres, com letra maiúscula, minúscula, número e caractere especial, como . ? @ $. Sem limite máximo.</p>
+          <label id="confirm-password-label" hidden>Confirmar senha<input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" disabled></label>
+          <button class="button button-primary" id="auth-submit" type="submit">Entrar</button>
+        </form>
+        <p id="auth-message" role="status" aria-live="polite"></p>
+        <button class="text-button" id="auth-mode" type="button" hidden>Não tem conta? Criar conta</button>
+        <button class="text-button" id="auth-refresh" type="button">Verificar conexão</button>
+        <p>Use letras, números, ponto, hífen ou sublinhado no usuário. As contas ficam neste computador.</p>
+      </section>
+
+      <main id="main" hidden>
         <section id="simulador" aria-labelledby="page-title">
           <div class="page-heading">
             <div><p class="eyebrow">BASE DO SIMULADOR</p><h1 id="page-title">O acesso começa aqui.</h1><p class="page-description">Explore a porta virtual e acompanhe cada ação em tempo real.</p></div>
@@ -142,19 +161,51 @@
           </details>
         </section>
 
-        <section class="activity-card" id="atividade" aria-labelledby="activity-title">
+        <section class="activity-card" id="atividade" aria-labelledby="activity-title" data-admin>
           <div class="section-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2 id="activity-title">Atividade recente</h2></div><span class="subtle-badge" id="event-count">Carregando</span></div>
           <p class="section-description">Ações da porta e transições de energia, com data real e instante virtual.</p>
           <div id="events" class="events-list" aria-busy="true"><div class="empty-state">Carregando o histórico…</div></div>
           <div class="history-footer"><svg class="icon"><use href="#icon-check"/></svg>Histórico salvo neste computador.</div>
         </section>
 
+        <section class="account-section" id="nobreak" aria-labelledby="ups-title">
+          <p class="eyebrow">ALIMENTAÇÃO DO COMPUTADOR</p><h2 id="ups-title">Nobreak real</h2>
+          <p>O grupo prevê usar um nobreak para alimentar este computador. A bateria do laboratório acima continua sendo uma simulação independente.</p>
+          <p id="ups-status" role="status">Integração aguardando modelo compatível. Nenhuma leitura real disponível.</p>
+          <p id="ups-reading"></p>
+          <p>Os botões de energia virtual não desligam o computador ou o nobreak. Alimentação de emergência também não garante conexão com a internet.</p>
+        </section>
+
+        <section class="account-section" id="contas" aria-labelledby="account-title">
+          <p class="eyebrow">ACESSO E PERMISSÕES</p><h2 id="account-title">Sua conta</h2>
+          <p>A sessão dura até oito horas reais. Alterar uma conta ou sua senha encerra as sessões dela.</p>
+          <form id="password-form" class="account-form">
+            <label>Senha atual<input name="current_password" type="password" autocomplete="current-password" required></label>
+            <label>Nova senha<input name="new_password" type="password" autocomplete="new-password" required data-new-password aria-describedby="account-password-rules"></label>
+            <p class="password-rules" id="account-password-rules">No mínimo 6 caracteres, com maiúscula, minúscula, número e caractere especial. Sem limite máximo.</p>
+            <button class="button button-secondary" type="submit">Trocar minha senha</button>
+          </form>
+          <div data-admin>
+            <h3>Pessoas com acesso</h3>
+            <p>Usuários operam a porta virtual. Administradores também controlam cenários de energia, chave de demonstração, contas e histórico. O último administrador ativo é preservado.</p>
+            <form id="new-user-form" class="account-form">
+              <label>Novo usuário<input name="username" autocomplete="off" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+"></label>
+              <label>Senha inicial<input name="password" type="password" autocomplete="new-password" required data-new-password aria-describedby="account-password-rules"></label>
+              <label>Papel<select name="role"><option value="user">Usuário</option><option value="admin">Administrador</option></select></label>
+              <button class="button button-primary" type="submit">Criar conta</button>
+            </form>
+            <div id="account-list"></div>
+            <details><summary>Histórico de contas</summary><ol id="account-history" class="account-history"></ol></details>
+          </div>
+          <p id="account-message" class="account-message" role="status" aria-live="polite"></p>
+        </section>
+
         <section id="evolucao" class="roadmap" aria-labelledby="roadmap-title">
           <div class="section-heading"><div><p class="eyebrow">CONSTRUÍDO EM ETAPAS</p><h2 id="roadmap-title">A base de algo maior.</h2></div><span class="subtle-badge">Em desenvolvimento</span></div>
-          <p class="section-description">Porta, energia virtual e histórico já fazem parte desta versão. O próximo passo é gerenciar pessoas e permissões.</p>
+          <p class="section-description">Porta, energia virtual, contas e permissões já estão disponíveis. O próximo passo é simular comandos e falhas de conexão.</p>
           <div class="roadmap-grid">
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emergência</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Disponível no laboratório</span></article>
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permissões</h3><p>Contas, autorizações e gerenciamento de quem pode entrar.</p><span class="future-label">Planejado</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permissões</h3><p>Contas, autorizações e gerenciamento de quem pode entrar.</p><span class="future-label">Disponível no laboratório</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-face"/></svg></span><h3>Reconhecimento facial</h3><p>Identificação por imagens integrada às regras de acesso.</p><span class="future-label">Planejado</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-network"/></svg></span><h3>Falhas de conexão</h3><p>Cenários de indisponibilidade, atraso e reconexão do dispositivo.</p><span class="future-label">Planejado</span></article>
           </div>
