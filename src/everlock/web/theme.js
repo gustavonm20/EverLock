@@ -12,6 +12,7 @@
   function apply() {
     const dark = choice ? choice === "dark" : system.matches;
     document.documentElement.dataset.theme = dark ? "dark" : "light";
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#111312" : "#f6f7f2");
     const button = document.getElementById("theme-toggle");
     if (button) {
       const label = dark ? "Ativar tema claro" : "Ativar tema escuro";

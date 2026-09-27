@@ -15,5 +15,6 @@ body:not([data-role="admin"]) [data-admin] { display: none !important; }
 .session-label { font-size: 12px; overflow-wrap: anywhere; }
 .topbar-actions { flex-wrap: wrap; }
 .account-message { margin: 14px 0; line-height: 1.6; }
-:root[data-theme="dark"] .auth-panel, :root[data-theme="dark"] .account-section, :root[data-theme="dark"] .account-form input, :root[data-theme="dark"] .account-form select, :root[data-theme="dark"] .account-row select { background: #192d24; color: #e4eee6; }
+:root[data-theme="dark"] .auth-panel, :root[data-theme="dark"] .account-section { background: var(--white); color: var(--ink); }
+:root[data-theme="dark"] .account-form input, :root[data-theme="dark"] .account-form select, :root[data-theme="dark"] .account-row select { background: #202222; border-color: #484c49; color: var(--ink); }
 @media(max-width:640px) { .auth-panel { margin: 24px 16px; padding: 24px; } .account-section { padding: 20px; } .session-label { flex-basis: 100%; text-align: right; } }

@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" content="#174f49">
+    <meta name="theme-color" content="#111312">
     <meta name="description" content="EverLock: laboratório de controle de acesso com uma porta inteiramente virtual.">
     <title>EverLock · Laboratório de acesso</title>
-    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/static/favicon.svg?v=2" type="image/svg+xml">
     <script src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/theme.css">
@@ -36,7 +36,7 @@
 
     <aside class="sidebar" aria-label="Navegação principal">
       <a class="brand" href="#simulador" aria-label="EverLock, início">
-        <span class="brand-icon"><svg class="icon"><use href="#icon-lock"/></svg></span>
+        <span class="brand-icon"><img src="/static/favicon.svg?v=2" alt="" width="38" height="38"></span>
         <span>Ever<span class="brand-light">Lock</span><small>LABORATÓRIO DE ACESSO</small></span>
       </a>
       <div class="sidebar-section-label">ESPAÇO DE TRABALHO</div>
@@ -73,7 +73,6 @@
         <p id="auth-message" role="status" aria-live="polite"></p>
         <button class="text-button" id="auth-mode" type="button" hidden>Não tem conta? Criar conta</button>
         <button class="text-button" id="auth-refresh" type="button">Verificar conexão</button>
-        <p>Use letras, números, ponto, hífen ou sublinhado no usuário. As contas ficam neste computador.</p>
       </section>
 
       <main id="main" hidden>
