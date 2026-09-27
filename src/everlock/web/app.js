@@ -25,8 +25,10 @@
   let historyLoaded = false;
   let statusRequestSequence = 0;
   let lastAppliedRequest = 0;
+  let sessionGeneration = 0;
 
   async function request(path, options = {}) {
+    const generation = sessionGeneration;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 5000);
     try {
@@ -37,6 +39,8 @@
         signal: controller.signal,
       });
       const body = await response.json();
+      if (response.status === 401) document.dispatchEvent(new Event("everlock-login-required"));
+      if (generation !== sessionGeneration) throw new Error("Session changed");
       return { response, body };
     } finally {
       window.clearTimeout(timeout);
@@ -110,11 +114,12 @@
         if (["open", "exit", "key_entry"].includes(button.dataset.action)) unavailable = isOpen;
         if (button.dataset.action === "close") unavailable = !isOpen;
         if (lastState.device.status !== "online" && ["unlock", "open", "end_release"].includes(button.dataset.action)) unavailable = true;
+        if (button.dataset.action === "key_entry" && document.body.dataset.role !== "admin") unavailable = true;
       }
       button.disabled = unavailable;
     }
     for (const control of labControls) {
-      let unavailable = !connected || !lastState || actionInProgress;
+      let unavailable = !connected || !lastState || actionInProgress || document.body.dataset.role !== "admin";
       if (!unavailable) {
         if (control.id === "cut-power") unavailable = !lastState.power.mains_available;
         if (control.id === "restore-power") unavailable = lastState.power.mains_available;
@@ -226,7 +231,7 @@
       const title = document.createElement("h3");
       title.textContent = event.title;
       const detail = document.createElement("p");
-      detail.textContent = event.detail;
+      detail.textContent = `${event.actor ? `${event.actor}: ` : ""}${event.detail}`;
       copy.append(title, detail);
       const time = document.createElement("time");
       time.className = "event-time";
@@ -248,6 +253,7 @@
   }
 
   async function updateEvents() {
+    if (document.body.dataset.role !== "admin") return;
     try {
       const { response, body } = await request("/api/events?limit=20");
       if (!response.ok || !Array.isArray(body.items)) throw new Error("Events unavailable");
@@ -313,12 +319,28 @@
   }
 
   async function poll() {
-    if (polling || actionInProgress) return;
+    if (polling || actionInProgress || !document.body.dataset.role) return;
     polling = true;
     try {
-      await Promise.allSettled([updateStatus(), updateEvents()]);
+      await Promise.allSettled([updateStatus(), updateEvents(), updateUPS()]);
     } finally {
       polling = false;
+    }
+  }
+
+  async function updateUPS() {
+    const status = document.getElementById("ups-status");
+    const reading = document.getElementById("ups-reading");
+    try {
+      const { response, body } = await request("/api/ups");
+      if (!response.ok) throw new Error("UPS unavailable");
+      const labels = { not_configured: "Integração aguardando modelo compatível. Nenhuma leitura real disponível.", unavailable: "Leitura real indisponível. Não é possível confirmar a alimentação.", stale: "Última leitura real desatualizada. Não representa confirmação do estado atual.", available: "Leitura recebida do nobreak real." };
+      status.textContent = labels[body.status] || "Estado do nobreak desconhecido.";
+      const value = body.observation;
+      reading.textContent = value ? `${body.status === "available" ? "Leitura" : "Última leitura conhecida"}: ${new Date(value.observed_at).toLocaleString("pt-BR")} · Rede: ${value.external_power === null ? "não informada" : value.external_power ? "presente" : "ausente"} · Carga: ${value.battery_percent === null ? "não informada" : `${numberFormat.format(value.battery_percent)}%`} · Autonomia informada pelo equipamento: ${value.runtime_seconds === null ? "não disponível" : duration(value.runtime_seconds)}` : "";
+    } catch {
+      status.textContent = "Sem conexão para consultar o nobreak. Estado real desconhecido.";
+      reading.textContent = "";
     }
   }
 
@@ -351,7 +373,13 @@
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) poll();
   });
-  poll();
+  document.addEventListener("everlock-session", () => {
+    sessionGeneration += 1;
+    lastState = null; historyLoaded = false; configLoaded = false;
+    elements.events.replaceChildren();
+    setConnection(false);
+    poll();
+  });
   window.setInterval(() => {
     if (!document.hidden) poll();
   }, 1000);
