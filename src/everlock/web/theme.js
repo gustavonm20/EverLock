@@ -7,7 +7,7 @@
   try {
     const saved = localStorage.getItem(key);
     if (saved === "light" || saved === "dark") choice = saved;
-  } catch { /* O tema continua funcionando quando o armazenamento est� bloqueado. */ }
+  } catch { /* O tema continua funcionando quando o armazenamento está bloqueado. */ }
 
   function apply() {
     const dark = choice ? choice === "dark" : system.matches;
@@ -21,13 +21,13 @@
       button.setAttribute("aria-pressed", String(dark));
     }
   }
-  // Executado antes do CSS para evitar um clar�o ao abrir no tema escuro.
+  // Executado antes do CSS para evitar um clarão ao abrir no tema escuro.
   apply();
   document.addEventListener("DOMContentLoaded", () => {
     apply();
     document.getElementById("theme-toggle").addEventListener("click", () => {
       choice = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-      try { localStorage.setItem(key, choice); } catch { /* Prefer�ncia v�lida nesta aba. */ }
+      try { localStorage.setItem(key, choice); } catch { /* Preferência válida nesta aba. */ }
       apply();
     });
   });
