@@ -1,6 +1,6 @@
 # Como contribuir
 
-O EverLock é desenvolvido em incrementos verificáveis. Antes de alterar o código, escolha ou abra uma issue, confirme o critério de aceite e mantenha o escopo inteiramente em software.
+O EverLock é desenvolvido em incrementos verificáveis. Antes de alterar o código, escolha ou abra uma issue e confirme o critério de aceite. Porta, trava e sensores continuam virtuais. A única aquisição física prevista é um nobreak pronto para alimentar o computador; consulte [o plano de integração](docs/ups.md).
 
 ## Fluxo sugerido
 
