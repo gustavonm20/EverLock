@@ -43,7 +43,9 @@ class Storage:
         columns = {row["name"] for row in self.connection.execute("PRAGMA table_info(events)")}
         if "simulated_at" not in columns:
             self.connection.execute("ALTER TABLE events ADD COLUMN simulated_at REAL")
-            self.connection.commit()
+        if "actor" not in columns:
+            self.connection.execute("ALTER TABLE events ADD COLUMN actor TEXT")
+        self.connection.commit()
 
     def load(self) -> Door:
         row = self.connection.execute("SELECT * FROM door_state WHERE id=1").fetchone()
@@ -87,10 +89,10 @@ class Storage:
             )
             self.connection.executemany(
                 """INSERT INTO events
-                   (type, title, detail, source, outcome, created_at, simulated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                   (type, title, detail, source, outcome, created_at, simulated_at, actor)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 [(event.type, event.title, event.detail, event.source, event.outcome,
-                  door.updated_at, event.simulated_at) for event in events],
+                  door.updated_at, event.simulated_at, event.actor) for event in events],
             )
 
     def events(self, limit: int) -> list[dict]:
