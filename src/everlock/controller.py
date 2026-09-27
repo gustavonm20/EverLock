@@ -16,6 +16,7 @@ class Controller:
         self.storage = storage
         self.clock = clock
         self.mutex = RLock()
+        self.actor = None
         self.door = storage.load()
         self.power, self.timeline = storage.load_simulation()
         self._last_real = clock()
@@ -35,6 +36,7 @@ class Controller:
         door.updated_at = datetime.now(UTC).isoformat()
         stamped = [replace(e, simulated_at=timeline.elapsed_seconds)
                    if e.simulated_at is None else e for e in events]
+        stamped = [replace(e, actor=self.actor) if e.source != "system" else e for e in stamped]
         # Porta, bateria, relógio e eventos são publicados só depois da transação.
         self.storage.save(door, stamped, power, timeline)
         self.door, self.power, self.timeline = door, power, timeline
@@ -93,7 +95,7 @@ class Controller:
             "power": power, "simulation": asdict(self.timeline),
             "capabilities": {
                 "door": True, "power": True, "connectivity": False,
-                "face_recognition": False, "authentication": False,
+                "face_recognition": False, "authentication": True,
             },
             "revision": self.door.revision, "updated_at": self.door.updated_at,
             "observed_at": datetime.now(UTC).isoformat(),
