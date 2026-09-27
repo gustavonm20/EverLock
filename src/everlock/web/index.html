@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" content="#174f49">
-    <meta name="description" content="EverLock: laboratório de controle de acesso com uma porta inteiramente virtual.">
-    <title>EverLock · Laboratório de acesso</title>
-    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#111312">
+    <meta name="description" content="EverLock: laborat�rio de controle de acesso com uma porta inteiramente virtual.">
+    <title>EverLock � Laborat�rio de acesso</title>
+    <link rel="icon" href="/static/favicon.svg?v=2" type="image/svg+xml">
     <script src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/theme.css">
@@ -16,7 +16,7 @@
     <script src="/static/auth.js" defer></script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Pular para o conteúdo</a>
+    <a class="skip-link" href="#main">Pular para o conte�do</a>
     <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
       <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></symbol>
@@ -34,12 +34,12 @@
       <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
     </svg>
 
-    <aside class="sidebar" aria-label="Navegação principal">
-      <a class="brand" href="#simulador" aria-label="EverLock, início">
-        <span class="brand-icon"><svg class="icon"><use href="#icon-lock"/></svg></span>
-        <span>Ever<span class="brand-light">Lock</span><small>LABORATÓRIO DE ACESSO</small></span>
+    <aside class="sidebar" aria-label="Navega��o principal">
+      <a class="brand" href="#simulador" aria-label="EverLock, in�cio">
+        <span class="brand-icon"><img src="/static/favicon.svg?v=2" alt="" width="38" height="38"></span>
+        <span>Ever<span class="brand-light">Lock</span><small>LABORAT�RIO DE ACESSO</small></span>
       </a>
-      <div class="sidebar-section-label">ESPAÇO DE TRABALHO</div>
+      <div class="sidebar-section-label">ESPA�O DE TRABALHO</div>
       <nav class="navigation">
         <a class="nav-link active" href="#simulador" aria-current="location"><svg class="icon"><use href="#icon-door"/></svg>Simulador</a>
         <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Energia</a>
@@ -48,53 +48,52 @@
         <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Etapas</a>
       </nav>
       <div class="sidebar-bottom">
-        <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
+        <div class="prototype-note"><span class="little-dot"></span>PROT�TIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.3.0</span></span>
+        <span class="version">Vers�o <span id="version">0.3.0</span></span>
       </div>
     </aside>
 
     <div class="workspace">
       <header class="topbar">
-        <span class="breadcrumb">EverLock <span>/</span> Visão geral</span>
-        <div class="topbar-actions"><span class="session-label" id="session-label"></span><button class="text-button" id="logout" type="button" hidden>Sair</button><span class="simulation-badge"><svg class="icon"><use href="#icon-info"/></svg>Simulação</span><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Ativar tema escuro"><svg class="icon theme-moon" aria-hidden="true"><use href="#icon-moon"/></svg><svg class="icon theme-sun" aria-hidden="true"><use href="#icon-sun"/></svg></button></div>
+        <span class="breadcrumb">EverLock <span>/</span> Vis�o geral</span>
+        <div class="topbar-actions"><span class="session-label" id="session-label"></span><button class="text-button" id="logout" type="button" hidden>Sair</button><span class="simulation-badge"><svg class="icon"><use href="#icon-info"/></svg>Simula��o</span><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Ativar tema escuro"><svg class="icon theme-moon" aria-hidden="true"><use href="#icon-moon"/></svg><svg class="icon theme-sun" aria-hidden="true"><use href="#icon-sun"/></svg></button></div>
       </header>
 
       <section class="auth-panel" id="auth-panel" aria-labelledby="auth-title">
         <p class="eyebrow">ACESSO LOCAL</p><h1 id="auth-title">Entre no EverLock</h1>
-        <p id="auth-description">Verificando a configuração deste computador…</p>
+        <p id="auth-description">Verificando a configura��o deste computador�</p>
         <form id="login-form" class="account-form">
-          <label>Usuário<input name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+" placeholder="Seu nome de usuário"></label>
+          <label>Usu�rio<input name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+" placeholder="Seu nome de usu�rio"></label>
           <label>Senha<input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Sua senha" aria-describedby="password-rules"></label>
-          <p id="password-rules" class="password-rules" hidden>No mínimo 6 caracteres, com letra maiúscula, minúscula, número e caractere especial, como . ? @ $. Sem limite máximo.</p>
+          <p id="password-rules" class="password-rules" hidden>No m�nimo 6 caracteres, com letra mai�scula, min�scula, n�mero e caractere especial, como . ? @ $. Sem limite m�ximo.</p>
           <label id="confirm-password-label" hidden>Confirmar senha<input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" disabled></label>
           <button class="button button-primary" id="auth-submit" type="submit">Entrar</button>
         </form>
         <p id="auth-message" role="status" aria-live="polite"></p>
-        <button class="text-button" id="auth-mode" type="button" hidden>Não tem conta? Criar conta</button>
-        <button class="text-button" id="auth-refresh" type="button">Verificar conexão</button>
-        <p>Use letras, números, ponto, hífen ou sublinhado no usuário. As contas ficam neste computador.</p>
+        <button class="text-button" id="auth-mode" type="button" hidden>N�o tem conta? Criar conta</button>
+        <button class="text-button" id="auth-refresh" type="button">Verificar conex�o</button>
       </section>
 
       <main id="main" hidden>
         <section id="simulador" aria-labelledby="page-title">
           <div class="page-heading">
-            <div><p class="eyebrow">BASE DO SIMULADOR</p><h1 id="page-title">O acesso começa aqui.</h1><p class="page-description">Explore a porta virtual e acompanhe cada ação em tempo real.</p></div>
-            <div class="connection-pill" id="connection-pill" data-state="waiting"><span class="status-dot"></span><span id="connection-label">Conectando…</span></div>
+            <div><p class="eyebrow">BASE DO SIMULADOR</p><h1 id="page-title">O acesso come�a aqui.</h1><p class="page-description">Explore a porta virtual e acompanhe cada a��o em tempo real.</p></div>
+            <div class="connection-pill" id="connection-pill" data-state="waiting"><span class="status-dot"></span><span id="connection-label">Conectando�</span></div>
           </div>
 
-          <div class="connection-warning" id="connection-warning" role="status" hidden>Não foi possível atualizar o simulador. Os controles estão indisponíveis até a conexão voltar.</div>
+          <div class="connection-warning" id="connection-warning" role="status" hidden>N�o foi poss�vel atualizar o simulador. Os controles est�o indispon�veis at� a conex�o voltar.</div>
 
           <div class="status-grid" aria-label="Estado recebido do simulador">
-            <article class="status-card"><span class="metric-icon"><svg class="icon"><use href="#icon-door"/></svg></span><div><p>Posição da porta</p><strong id="door-position">Aguardando</strong><span id="door-hint">Recebendo estado inicial</span></div></article>
+            <article class="status-card"><span class="metric-icon"><svg class="icon"><use href="#icon-door"/></svg></span><div><p>Posi��o da porta</p><strong id="door-position">Aguardando</strong><span id="door-hint">Recebendo estado inicial</span></div></article>
             <article class="status-card"><span class="metric-icon"><svg class="icon"><use href="#icon-lock"/></svg></span><div><p>Estado da trava</p><strong id="lock-position">Aguardando</strong><span id="lock-hint">Recebendo estado inicial</span></div></article>
-            <article class="status-card"><span class="metric-icon"><svg class="icon"><use href="#icon-network"/></svg></span><div><p>Última atualização</p><strong id="last-update">—</strong><span id="update-hint">A conexão é verificada automaticamente</span></div></article>
+            <article class="status-card"><span class="metric-icon"><svg class="icon"><use href="#icon-network"/></svg></span><div><p>�ltima atualiza��o</p><strong id="last-update">�</strong><span id="update-hint">A conex�o � verificada automaticamente</span></div></article>
           </div>
 
           <div class="door-card">
             <div class="scene-panel">
               <div class="scene-heading"><span class="eyebrow">PORTA 01</span><span class="scene-badge">Virtual</span></div>
-              <div class="door-scene" id="door-scene" data-position="closed" data-lock="unknown" role="img" aria-label="Porta virtual aguardando informações">
+              <div class="door-scene" id="door-scene" data-position="closed" data-lock="unknown" role="img" aria-label="Porta virtual aguardando informa��es">
                 <div class="scene-orbit orbit-one"></div><div class="scene-orbit orbit-two"></div>
                 <div class="scene-floor"></div>
                 <div class="door-shadow"></div>
@@ -102,115 +101,115 @@
                 <div class="reader"><span class="reader-light"></span><svg class="icon"><use href="#icon-lock"/></svg></div>
               </div>
               <div class="scene-caption"><span class="caption-dot" id="caption-dot"></span><strong id="door-summary">Aguardando estado da porta</strong></div>
-              <p class="scene-description" id="scene-description">As ações serão liberadas quando o simulador responder.</p>
+              <p class="scene-description" id="scene-description">As a��es ser�o liberadas quando o simulador responder.</p>
             </div>
             <div class="controls-panel">
               <div class="panel-heading"><span class="section-number">01</span><div><h2>Controle de entrada</h2><p>Libere a trava e, depois, abra a porta.</p></div></div>
               <button type="button" class="button button-primary" data-action="unlock" disabled><svg class="icon"><use href="#icon-lock"/></svg><span>Liberar por 3 segundos</span><svg class="icon action-arrow"><use href="#icon-arrow"/></svg></button>
-              <div class="release-info"><span id="release-description">Liberação temporária da trava virtual.</span><button type="button" class="text-button" data-action="end_release" disabled>Encerrar liberação</button></div>
+              <div class="release-info"><span id="release-description">Libera��o tempor�ria da trava virtual.</span><button type="button" class="text-button" data-action="end_release" disabled>Encerrar libera��o</button></div>
               <div class="button-pair"><button type="button" class="button button-secondary" data-action="open" disabled><svg class="icon"><use href="#icon-arrow"/></svg><span>Abrir / entrar</span></button><button type="button" class="button button-secondary" data-action="close" disabled><svg class="icon"><use href="#icon-door"/></svg><span>Fechar porta</span></button></div>
-              <div class="manual-controls"><div class="manual-heading"><h3>Acesso manual</h3><span>SIMULADO</span></div><p>Experimente as alternativas de entrada e saída.</p><div class="button-pair"><button type="button" class="button button-quiet" data-action="exit" disabled><svg class="icon"><use href="#icon-arrow"/></svg><span>Saída interna</span></button><button type="button" class="button button-quiet" data-action="key_entry" disabled><svg class="icon"><use href="#icon-key"/></svg><span>Usar chave</span></button></div></div>
-              <div class="action-feedback" id="action-feedback" role="status" aria-live="polite" aria-atomic="true">Tudo acontece aqui no simulador. Nenhuma porta física é controlada.</div>
+              <div class="manual-controls"><div class="manual-heading"><h3>Acesso manual</h3><span>SIMULADO</span></div><p>Experimente as alternativas de entrada e sa�da.</p><div class="button-pair"><button type="button" class="button button-quiet" data-action="exit" disabled><svg class="icon"><use href="#icon-arrow"/></svg><span>Sa�da interna</span></button><button type="button" class="button button-quiet" data-action="key_entry" disabled><svg class="icon"><use href="#icon-key"/></svg><span>Usar chave</span></button></div></div>
+              <div class="action-feedback" id="action-feedback" role="status" aria-live="polite" aria-atomic="true">Tudo acontece aqui no simulador. Nenhuma porta f�sica � controlada.</div>
             </div>
           </div>
         </section>
 
         <section class="energy-card" id="energia" aria-labelledby="energy-title">
-          <div class="section-heading"><div><p class="eyebrow">LABORATÓRIO DE FALHAS</p><h2 id="energy-title">E quando a energia acaba?</h2></div><span class="subtle-badge">Bateria virtual</span></div>
-          <p class="section-description">Corte a alimentação, avance o tempo e acompanhe a reserva. Os valores são didáticos: a bateria virtual não mantém o computador ligado.</p>
+          <div class="section-heading"><div><p class="eyebrow">LABORAT�RIO DE FALHAS</p><h2 id="energy-title">E quando a energia acaba?</h2></div><span class="subtle-badge">Bateria virtual</span></div>
+          <p class="section-description">Corte a alimenta��o, avance o tempo e acompanhe a reserva. Os valores s�o did�ticos: a bateria virtual n�o mant�m o computador ligado.</p>
           <div class="energy-grid">
             <div class="power-readings">
-              <div class="battery-heading"><span>Carga da bateria</span><strong id="battery-percent">—</strong></div>
+              <div class="battery-heading"><span>Carga da bateria</span><strong id="battery-percent">�</strong></div>
               <progress id="battery-meter" max="100" value="0" aria-label="Carga da bateria virtual"></progress>
               <p id="battery-detail">Aguardando a primeira leitura.</p>
               <dl class="power-metrics">
-                <div><dt>Alimentação externa</dt><dd id="mains-state">—</dd></div>
-                <div><dt>Dispositivo virtual</dt><dd id="device-state">—</dd></div>
-                <div><dt>Perfil / consumo</dt><dd id="power-profile">—</dd></div>
-                <div><dt>Autonomia até desligar</dt><dd id="battery-runtime">—</dd></div>
+                <div><dt>Alimenta��o externa</dt><dd id="mains-state">�</dd></div>
+                <div><dt>Dispositivo virtual</dt><dd id="device-state">�</dd></div>
+                <div><dt>Perfil / consumo</dt><dd id="power-profile">�</dd></div>
+                <div><dt>Autonomia at� desligar</dt><dd id="battery-runtime">�</dd></div>
               </dl>
               <p class="energy-notice" id="power-notice" role="status">Aguardando o estado da energia.</p>
-              <div class="button-pair"><button type="button" id="cut-power" class="button button-secondary" disabled>Cortar alimentação</button><button type="button" id="restore-power" class="button button-secondary" disabled>Restaurar alimentação</button></div>
+              <div class="button-pair"><button type="button" id="cut-power" class="button button-secondary" disabled>Cortar alimenta��o</button><button type="button" id="restore-power" class="button button-secondary" disabled>Restaurar alimenta��o</button></div>
             </div>
             <div class="clock-controls">
-              <p class="eyebrow">TEMPO DE SIMULAÇÃO</p>
+              <p class="eyebrow">TEMPO DE SIMULA��O</p>
               <strong class="virtual-clock" id="virtual-time">00h 00m 00s</strong>
-              <p id="clock-state">Aguardando o relógio.</p>
-              <div class="clock-settings"><button type="button" id="toggle-clock" class="button button-secondary" disabled>Pausar</button><label for="clock-speed">Velocidade<select id="clock-speed" disabled><option value="1">1×</option><option value="60">60×</option><option value="600">600×</option></select></label></div>
-              <p class="clock-help">Pause para avançar um intervalo. Porta e bateria usam o mesmo relógio: a pausa e a velocidade também afetam a liberação de 3 segundos.</p>
+              <p id="clock-state">Aguardando o rel�gio.</p>
+              <div class="clock-settings"><button type="button" id="toggle-clock" class="button button-secondary" disabled>Pausar</button><label for="clock-speed">Velocidade<select id="clock-speed" disabled><option value="1">1�</option><option value="60">60�</option><option value="600">600�</option></select></label></div>
+              <p class="clock-help">Pause para avan�ar um intervalo. Porta e bateria usam o mesmo rel�gio: a pausa e a velocidade tamb�m afetam a libera��o de 3 segundos.</p>
               <div class="step-buttons"><button type="button" class="button button-quiet" data-step="3" disabled>+3 segundos</button><button type="button" class="button button-quiet" data-step="3600" disabled>+1 hora</button><button type="button" class="button button-quiet" data-step="21600" disabled>+6 horas</button></div>
-              <p class="clock-help">Em 20% de carga, entra o modo econômico. Em 5%, o dispositivo desliga. A reserva restante só alimenta o consumo residual configurado.</p>
+              <p class="clock-help">Em 20% de carga, entra o modo econ�mico. Em 5%, o dispositivo desliga. A reserva restante s� alimenta o consumo residual configurado.</p>
             </div>
           </div>
-          <div class="action-feedback" id="power-feedback" role="status" aria-live="polite" aria-atomic="true">Prepare um cenário ou corte a alimentação para começar.</div>
-          <details class="power-parameters"><summary>Parâmetros do cenário</summary>
+          <div class="action-feedback" id="power-feedback" role="status" aria-live="polite" aria-atomic="true">Prepare um cen�rio ou corte a alimenta��o para come�ar.</div>
+          <details class="power-parameters"><summary>Par�metros do cen�rio</summary>
             <form id="power-config-form">
               <div class="parameter-grid">
                 <label>Capacidade (Wh)<input name="capacity_wh" type="number" min="1" max="1000" step="0.1" value="40" required disabled></label>
                 <label>Carga inicial (%)<input name="initial_percent" type="number" min="0" max="100" step="0.1" value="100" required disabled></label>
                 <label>Consumo normal (W)<input name="normal_load_w" type="number" min="0.1" max="100" step="0.1" value="8" required disabled></label>
-                <label>Consumo econômico (W)<input name="economy_load_w" type="number" min="0.1" max="100" step="0.1" value="4" required disabled></label>
-                <label>Extra durante liberação (W)<input name="actuator_extra_w" type="number" min="0" max="100" step="0.1" value="12" required disabled></label>
+                <label>Consumo econ�mico (W)<input name="economy_load_w" type="number" min="0.1" max="100" step="0.1" value="4" required disabled></label>
+                <label>Extra durante libera��o (W)<input name="actuator_extra_w" type="number" min="0" max="100" step="0.1" value="12" required disabled></label>
                 <label>Consumo desligado (W)<input name="standby_load_w" type="number" min="0" max="1" step="0.01" value="0.1" required disabled></label>
-                <label>Potência para recarga (W)<input name="charge_power_w" type="number" min="0.1" max="100" step="0.1" value="10" required disabled></label>
-                <label>Eficiência (%)<input name="efficiency_percent" type="number" min="50" max="100" step="1" value="90" required disabled></label>
+                <label>Pot�ncia para recarga (W)<input name="charge_power_w" type="number" min="0.1" max="100" step="0.1" value="10" required disabled></label>
+                <label>Efici�ncia (%)<input name="efficiency_percent" type="number" min="50" max="100" step="1" value="90" required disabled></label>
               </div>
-              <p class="clock-help">Aplicar restaura a alimentação, redefine a carga, pausa o tempo em 1× e encerra a liberação. A posição da porta e o histórico são mantidos. O consumo extra só vale durante a liberação; a potência de recarga é adicional ao consumo do dispositivo.</p>
-              <button type="submit" class="button button-secondary" id="apply-power-config" disabled>Preparar cenário e pausar</button>
+              <p class="clock-help">Aplicar restaura a alimenta��o, redefine a carga, pausa o tempo em 1� e encerra a libera��o. A posi��o da porta e o hist�rico s�o mantidos. O consumo extra s� vale durante a libera��o; a pot�ncia de recarga � adicional ao consumo do dispositivo.</p>
+              <button type="submit" class="button button-secondary" id="apply-power-config" disabled>Preparar cen�rio e pausar</button>
             </form>
           </details>
         </section>
 
         <section class="activity-card" id="atividade" aria-labelledby="activity-title" data-admin>
           <div class="section-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2 id="activity-title">Atividade recente</h2></div><span class="subtle-badge" id="event-count">Carregando</span></div>
-          <p class="section-description">Ações da porta e transições de energia, com data real e instante virtual.</p>
-          <div id="events" class="events-list" aria-busy="true"><div class="empty-state">Carregando o histórico…</div></div>
-          <div class="history-footer"><svg class="icon"><use href="#icon-check"/></svg>Histórico salvo neste computador.</div>
+          <p class="section-description">A��es da porta e transi��es de energia, com data real e instante virtual.</p>
+          <div id="events" class="events-list" aria-busy="true"><div class="empty-state">Carregando o hist�rico�</div></div>
+          <div class="history-footer"><svg class="icon"><use href="#icon-check"/></svg>Hist�rico salvo neste computador.</div>
         </section>
 
         <section class="account-section" id="nobreak" aria-labelledby="ups-title">
-          <p class="eyebrow">ALIMENTAÇÃO DO COMPUTADOR</p><h2 id="ups-title">Nobreak real</h2>
-          <p>O grupo prevê usar um nobreak para alimentar este computador. A bateria do laboratório acima continua sendo uma simulação independente.</p>
-          <p id="ups-status" role="status">Integração aguardando modelo compatível. Nenhuma leitura real disponível.</p>
+          <p class="eyebrow">ALIMENTA��O DO COMPUTADOR</p><h2 id="ups-title">Nobreak real</h2>
+          <p>O grupo prev� usar um nobreak para alimentar este computador. A bateria do laborat�rio acima continua sendo uma simula��o independente.</p>
+          <p id="ups-status" role="status">Integra��o aguardando modelo compat�vel. Nenhuma leitura real dispon�vel.</p>
           <p id="ups-reading"></p>
-          <p>Os botões de energia virtual não desligam o computador ou o nobreak. Alimentação de emergência também não garante conexão com a internet.</p>
+          <p>Os bot�es de energia virtual n�o desligam o computador ou o nobreak. Alimenta��o de emerg�ncia tamb�m n�o garante conex�o com a internet.</p>
         </section>
 
         <section class="account-section" id="contas" aria-labelledby="account-title">
-          <p class="eyebrow">ACESSO E PERMISSÕES</p><h2 id="account-title">Sua conta</h2>
-          <p>A sessão dura até oito horas reais. Alterar uma conta ou sua senha encerra as sessões dela.</p>
+          <p class="eyebrow">ACESSO E PERMISS�ES</p><h2 id="account-title">Sua conta</h2>
+          <p>A sess�o dura at� oito horas reais. Alterar uma conta ou sua senha encerra as sess�es dela.</p>
           <form id="password-form" class="account-form">
             <label>Senha atual<input name="current_password" type="password" autocomplete="current-password" required></label>
             <label>Nova senha<input name="new_password" type="password" autocomplete="new-password" required data-new-password aria-describedby="account-password-rules"></label>
-            <p class="password-rules" id="account-password-rules">No mínimo 6 caracteres, com maiúscula, minúscula, número e caractere especial. Sem limite máximo.</p>
+            <p class="password-rules" id="account-password-rules">No m�nimo 6 caracteres, com mai�scula, min�scula, n�mero e caractere especial. Sem limite m�ximo.</p>
             <button class="button button-secondary" type="submit">Trocar minha senha</button>
           </form>
           <div data-admin>
             <h3>Pessoas com acesso</h3>
-            <p>Usuários operam a porta virtual. Administradores também controlam cenários de energia, chave de demonstração, contas e histórico. O último administrador ativo é preservado.</p>
+            <p>Usu�rios operam a porta virtual. Administradores tamb�m controlam cen�rios de energia, chave de demonstra��o, contas e hist�rico. O �ltimo administrador ativo � preservado.</p>
             <form id="new-user-form" class="account-form">
-              <label>Novo usuário<input name="username" autocomplete="off" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+"></label>
+              <label>Novo usu�rio<input name="username" autocomplete="off" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+"></label>
               <label>Senha inicial<input name="password" type="password" autocomplete="new-password" required data-new-password aria-describedby="account-password-rules"></label>
-              <label>Papel<select name="role"><option value="user">Usuário</option><option value="admin">Administrador</option></select></label>
+              <label>Papel<select name="role"><option value="user">Usu�rio</option><option value="admin">Administrador</option></select></label>
               <button class="button button-primary" type="submit">Criar conta</button>
             </form>
             <div id="account-list"></div>
-            <details><summary>Histórico de contas</summary><ol id="account-history" class="account-history"></ol></details>
+            <details><summary>Hist�rico de contas</summary><ol id="account-history" class="account-history"></ol></details>
           </div>
           <p id="account-message" class="account-message" role="status" aria-live="polite"></p>
         </section>
 
         <section id="evolucao" class="roadmap" aria-labelledby="roadmap-title">
-          <div class="section-heading"><div><p class="eyebrow">CONSTRUÍDO EM ETAPAS</p><h2 id="roadmap-title">A base de algo maior.</h2></div><span class="subtle-badge">Em desenvolvimento</span></div>
-          <p class="section-description">Porta, energia virtual, contas e permissões já estão disponíveis. O próximo passo é simular comandos e falhas de conexão.</p>
+          <div class="section-heading"><div><p class="eyebrow">CONSTRU�DO EM ETAPAS</p><h2 id="roadmap-title">A base de algo maior.</h2></div><span class="subtle-badge">Em desenvolvimento</span></div>
+          <p class="section-description">Porta, energia virtual, contas e permiss�es j� est�o dispon�veis. O pr�ximo passo � simular comandos e falhas de conex�o.</p>
           <div class="roadmap-grid">
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emergência</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Disponível no laboratório</span></article>
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permissões</h3><p>Contas, autorizações e gerenciamento de quem pode entrar.</p><span class="future-label">Disponível no laboratório</span></article>
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-face"/></svg></span><h3>Reconhecimento facial</h3><p>Identificação por imagens integrada às regras de acesso.</p><span class="future-label">Planejado</span></article>
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-network"/></svg></span><h3>Falhas de conexão</h3><p>Cenários de indisponibilidade, atraso e reconexão do dispositivo.</p><span class="future-label">Planejado</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emerg�ncia</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Dispon�vel no laborat�rio</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permiss�es</h3><p>Contas, autoriza��es e gerenciamento de quem pode entrar.</p><span class="future-label">Dispon�vel no laborat�rio</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-face"/></svg></span><h3>Reconhecimento facial</h3><p>Identifica��o por imagens integrada �s regras de acesso.</p><span class="future-label">Planejado</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-network"/></svg></span><h3>Falhas de conex�o</h3><p>Cen�rios de indisponibilidade, atraso e reconex�o do dispositivo.</p><span class="future-label">Planejado</span></article>
           </div>
         </section>
-        <footer class="page-footer"><span>EverLock · Laboratório de controle de acesso</span><span>Software local. Porta inteiramente virtual.</span></footer>
+        <footer class="page-footer"><span>EverLock � Laborat�rio de controle de acesso</span><span>Software local. Porta inteiramente virtual.</span></footer>
       </main>
     </div>
     <noscript><div class="noscript-message">Ative o JavaScript para interagir com a porta virtual e visualizar os estados atualizados.</div></noscript>
