@@ -9,6 +9,8 @@ O EverLock é desenvolvido em incrementos verificáveis. Antes de alterar o cód
 3. Execute `python -m ruff check src tests scripts` e `python -m pytest -q`.
 4. Abra um pull request vinculado à issue e descreva como reproduzir o resultado.
 
+A branch `main` é protegida: mudanças entram por pull request, com a verificação **Testes e qualidade** aprovada e a branch atualizada. Discussões de revisão devem ser resolvidas. Exclusão e force push são bloqueados, sem exceção para administradores. Não é exigido um número mínimo de aprovações de outra pessoa; a revisão da equipe continua fazendo parte da rotina.
+
 Não versione arquivos `.env*`, bancos da pasta `data`, imagens faciais, credenciais ou outros dados pessoais. Use somente imagens com autorização explícita nos futuros testes biométricos. Resultados preparados para demonstração devem ser identificados como simulados.
 
 Python é a linguagem selecionada para o MVP. Java continua sendo uma opção arquitetural válida, mas misturar backends não faz parte do escopo atual. Dependências novas precisam ter licença compatível, manutenção ativa, benefício claro e alternativa gratuita.
