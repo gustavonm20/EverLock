@@ -1,6 +1,6 @@
 # Estado do projeto
 
-Atualizado em 27 de setembro de 2026. Incremento 0.3 em revisão no [PR #14](https://github.com/gustavonm20/EverLock/pull/14).
+Atualizado em 27 de setembro de 2026. Entrega 0.3 registrada no [PR #14](https://github.com/gustavonm20/EverLock/pull/14).
 
 ## Entregue e verificado
 
@@ -31,7 +31,9 @@ Atualizado em 27 de setembro de 2026. Incremento 0.3 em revisão no [PR #14](htt
 
 **101 testes aprovados** na suíte local completa, incluindo cadastro pendente/aprovação, política de senha, senha longa sem truncamento, compatibilidade de contas anteriores, recuperação por terminal e separação entre nobreak e simulação. Ruff e a verificação de diferenças também passaram. Há um aviso de descontinuação do cliente HTTP de testes, já acompanhado na [issue #13](https://github.com/gustavonm20/EverLock/issues/13); não houve falha de teste.
 
-A interface de contas e os temas foram conferidos em computador e celular (390 × 844), incluindo persistência do tema e ausência de rolagem horizontal. O CI de energia e tema passou no GitHub; a execução do incremento completo pode ser consultada no PR.
+A interface de contas e os temas foram conferidos em computador e celular (390 × 844), incluindo persistência do tema e ausência de rolagem horizontal. O cadastro, a confirmação de senha e as restrições visíveis do usuário comum também foram conferidos. O [CI do incremento completo passou no GitHub](https://github.com/gustavonm20/EverLock/actions/runs/36295870556).
+
+A `main` está protegida por regra ativa: pull request obrigatório, testes de qualidade aprovados, base atualizada, discussões resolvidas e bloqueio de exclusão/force push. Não há exceções de bypass.
 
 ## Ponto de parada solicitado
 
