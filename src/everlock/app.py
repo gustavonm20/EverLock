@@ -7,15 +7,21 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from everlock import __version__
+from everlock.accounts import Accounts
+from everlock.auth_api import authorized
+from everlock.auth_api import router as auth_router
 from everlock.controller import Controller
 from everlock.domain import Action
+from everlock.energy import PowerConfig
 from everlock.storage import Storage
+from everlock.ups import UPSMonitor
 
 WEB_DIR = Path(__file__).parent / "web"
 PROJECT_DIR = Path(__file__).resolve().parents[2]
@@ -27,8 +33,46 @@ class ActionRequest(BaseModel):
     action: Action
 
 
+class PowerRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mains_available: bool = Field(strict=True)
+
+
+class ClockRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    paused: bool | None = Field(default=None, strict=True)
+    speed: int | None = Field(default=None, strict=True)
+    advance_seconds: float | None = Field(default=None, gt=0, le=86400, strict=True)
+
+    @model_validator(mode="after")
+    def valid_operation(self):
+        if sum(value is not None for value in (self.paused, self.speed, self.advance_seconds)) != 1:
+            raise ValueError("Envie apenas uma operação: paused, speed ou advance_seconds.")
+        if self.speed is not None and self.speed not in {1, 60, 600}:
+            raise ValueError("A velocidade deve ser 1, 60 ou 600.")
+        return self
+
+
+class PowerSetup(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    capacity_wh: float = Field(default=40, ge=1, le=1000, strict=True)
+    normal_load_w: float = Field(default=8, ge=0.1, le=100, strict=True)
+    economy_load_w: float = Field(default=4, ge=0.1, le=100, strict=True)
+    standby_load_w: float = Field(default=0.1, ge=0, le=1, strict=True)
+    charge_power_w: float = Field(default=10, ge=0.1, le=100, strict=True)
+    efficiency: float = Field(default=0.9, ge=0.5, le=1, strict=True)
+    actuator_extra_w: float = Field(default=12, ge=0, le=100, strict=True)
+    initial_percent: float = Field(default=100, ge=0, le=100, strict=True)
+
+    @model_validator(mode="after")
+    def valid_profile(self):
+        PowerConfig(**self.model_dump(exclude={"initial_percent"}))
+        return self
+
+
 def create_app(
     db_path: Path | None = None, clock: Callable[[], float] = time.monotonic,
+    session_clock: Callable[[], float] = time.time,
 ) -> FastAPI:
     if db_path is None:
         data_dir = Path(os.getenv("EVERLOCK_DATA_DIR", str(PROJECT_DIR / "data"))).resolve()
@@ -39,9 +83,12 @@ def create_app(
         storage = Storage(db_path)
         try:
             app.state.controller = Controller(storage, clock)
+            app.state.accounts = Accounts(storage.connection, app.state.controller.mutex,
+                                          session_clock)
+            app.state.ups = UPSMonitor(clock=session_clock)
             stop = asyncio.Event()
 
-            async def maintain_release():
+            async def maintain_simulation():
                 while not stop.is_set():
                     try:
                         await asyncio.to_thread(app.state.controller.tick)
@@ -54,12 +101,13 @@ def create_app(
                     except TimeoutError:
                         pass
 
-            timer = asyncio.create_task(maintain_release())
+            timer = asyncio.create_task(maintain_simulation())
             try:
                 yield
             finally:
                 stop.set()
                 await timer
+                await asyncio.to_thread(app.state.controller.checkpoint)
         finally:
             storage.close()
 
@@ -70,7 +118,7 @@ def create_app(
 
     @app.middleware("http")
     async def local_browser_boundary(request: Request, call_next):
-        # Defesa para o laboratório local. Não substitui autenticação em versões futuras.
+        # Origem e JSON complementam a sessão; o servidor continua restrito ao computador.
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             origin = request.headers.get("origin")
             expected = f"{request.url.scheme}://{request.url.netloc}"
@@ -95,6 +143,14 @@ def create_app(
         return response
 
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
+    app.include_router(auth_router)
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, error: RequestValidationError):
+        # O erro padrão pode devolver a entrada original, incluindo senhas.
+        return JSONResponse({"detail": [
+            {key: item[key] for key in ("loc", "msg", "type")} for item in error.errors()
+        ]}, 422)
 
     @app.get("/api/health")
     def health():
@@ -102,15 +158,44 @@ def create_app(
 
     @app.get("/api/status")
     def status(request: Request):
-        return request.app.state.controller.status()
+        with authorized(request):
+            return request.app.state.controller.status()
 
     @app.get("/api/events")
     def events(request: Request, limit: int = Query(default=20, ge=1, le=100)):
-        return {"items": request.app.state.controller.events(limit)}
+        with authorized(request, admin=True):
+            return {"items": request.app.state.controller.events(limit)}
+
+    @app.get("/api/ups")
+    def real_ups(request: Request):
+        with authorized(request):
+            return request.app.state.ups.snapshot()
 
     @app.post("/api/actions")
     def action(payload: ActionRequest, request: Request):
-        code, body = request.app.state.controller.action(payload.action)
+        with authorized(request, admin=payload.action == "key_entry"):
+            code, body = request.app.state.controller.action(payload.action)
+        return JSONResponse(body, status_code=code)
+
+    @app.post("/api/simulation/power")
+    def power(payload: PowerRequest, request: Request):
+        with authorized(request, admin=True):
+            code, body = request.app.state.controller.set_power(payload.mains_available)
+        return JSONResponse(body, status_code=code)
+
+    @app.post("/api/simulation/clock")
+    def clock_control(payload: ClockRequest, request: Request):
+        with authorized(request, admin=True):
+            code, body = request.app.state.controller.control_clock(**payload.model_dump())
+        return JSONResponse(body, status_code=code)
+
+    @app.post("/api/simulation/power/config")
+    def configure_power(payload: PowerSetup, request: Request):
+        config = PowerConfig(**payload.model_dump(exclude={"initial_percent"}))
+        with authorized(request, admin=True):
+            code, body = request.app.state.controller.configure_power(
+                config, payload.initial_percent,
+            )
         return JSONResponse(body, status_code=code)
 
     @app.get("/", include_in_schema=False)

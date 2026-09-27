@@ -2,9 +2,9 @@
 
 O trabalho será executado em incrementos pela IA, com implementação, testes, correções e documentação em cada etapa. A equipe avalia os resultados, informa exigências acadêmicas e, quando necessário, fornece imagens autorizadas.
 
-## Situação da primeira entrega
+## Situação atual
 
-A base executável, a interface inicial, a persistência e os controles essenciais da porta virtual fazem parte desta entrega. Isso inicia a etapa 1 e antecipa parte da etapa 2. Os demais módulos continuam planejados.
+A base e a porta virtual estão entregues. Energia, tema, contas e permissões estão implementados no incremento 0.3, com validação registrada em [status.md](status.md). A preparação para o nobreak real inclui contrato de leitura e separação da simulação, mas ainda não inclui driver. O quadro detalhado fica em [planning.md](planning.md) e no [Notion](https://app.notion.com/p/3e7e2dde06ab81f68b2ece96ce4a61a2).
 
 | Etapa | Entrega | Critério de conclusão |
 |---|---|---|
@@ -14,6 +14,7 @@ A base executável, a interface inicial, a persistência e os controles essencia
 | 4. Pessoas e permissões | Login, perfis, cadastro, revogação e histórico administrativo | Backend rejeita ações sem permissão; dados persistem |
 | 5. Comunicação | Comandos identificados, validade, duplicatas, desconexão e política local | Comando antigo não executa após reconexão; observações antigas ficam identificadas |
 | 6. Reconhecimento | Cadastro e comparação real de imagens; modo de testes separado | Imagens de teste distintas do cadastro; autorização consultada antes da liberação |
+| Paralela: nobreak | Validar modelo/OS, alimentar computador e integrar leituras compatíveis | Continuidade medida; perda USB identificada; simulação não comanda equipamento |
 | 7. Interface e laboratório | Telas consolidadas, falhas e cenários reproduzíveis | Cenários compreensíveis sem conhecer o código |
 | 8. Testes completos | Integração, falhas, recuperação e avaliação facial | Cenários obrigatórios aprovados e limitações registradas |
 | 9. n8n, opcional | Alertas e relatórios por eventos | Integração não controla a porta e sua ausência não interrompe o sistema |
@@ -21,14 +22,15 @@ A base executável, a interface inicial, a persistência e os controles essencia
 
 ## Próximo incremento
 
-Consolidar os testes da porta e acrescentar o motor de energia. Antes de implementar aceleração do tempo, definir um único relógio de simulação para liberação, bateria e comandos demonstrativos. As sessões de login, quando existirem, deverão usar tempo real.
+Acrescentar o protocolo de comandos: identificador único, validade, tratamento de duplicatas e confirmações de execução. Em seguida, simular perdas de internet, rede local e energia do dispositivo separadamente. Um comando antigo não poderá liberar a porta ao reconectar.
 
-A energia será expressa em Wh, com parâmetros didáticos explícitos. Seus resultados não serão apresentados como medições de bateria real. Desligar o computador continua encerrando a aplicação.
+A energia virtual usa Wh e parâmetros didáticos explícitos. Seus resultados não representam medições do nobreak. O grupo comprará somente esse equipamento adicional para sustentar o computador; autonomia e compatibilidade serão verificadas com o modelo real. Desligar o computador continua encerrando a aplicação.
 
 ## Dependências humanas
 
 - O reconhecimento real exige imagens autorizadas para cadastro e avaliação.
 - Webcam é opcional e depende de equipamento disponível e permissão de uso.
+- Informar marca/modelo do nobreak, interface de dados, sistema operacional e cargas alimentadas antes de implementar o driver; ver [ups.md](ups.md).
 - Novas exigências acadêmicas podem alterar prioridade ou linguagem.
 
 A ausência de imagens não impede desenvolver os demais módulos com resultados preparados, desde que identificados como simulados. Testes preparados não medem a precisão do reconhecimento facial.

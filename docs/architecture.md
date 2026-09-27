@@ -5,8 +5,15 @@ O EverLock é uma aplicação local única, organizada em módulos. O backend us
 ```mermaid
 flowchart LR
     Browser["Navegador\nInterface em português"] -->|"Ações HTTP"| API["API FastAPI"]
-    API --> Controller["Controlador da porta virtual"]
+    API --> Auth["Contas e sessão\nTempo real"]
+    Auth --> Controller["Controlador da simulação"]
+    Controller --> Clock["Relógio virtual único"]
+    Clock --> Door["Porta e liberação"]
+    Clock --> Power["Bateria e recuperação"]
     Controller <--> Store["SQLite\nEstado e eventos"]
+    Auth <--> Store
+    API --> UPS["Contrato de leitura do nobreak\nSem driver nesta versão"]
+    Future["Futuro driver compatível"] -.-> UPS
     Controller -->|"Estado e resultado"| API
     API -->|"Resposta"| Browser
 ```
@@ -29,15 +36,27 @@ As ações manuais deste protótipo representam comportamento mecânico. Elas n�
 
 ## Tempo e persistência
 
-A duração da liberação utiliza o relógio monotônico do servidor, que mede intervalos. Ela não depende de a aba do navegador continuar aberta e não é prolongada por mudanças no relógio de calendário.
+O relógio monotônico do servidor alimenta um relógio virtual único para porta, energia e recuperação. Ele suporta pausa, velocidades 1×/60×/600× e avanço manual quando pausado. Não depende da aba aberta nem do relógio de calendário. Sessões, limites de login e validade das leituras do nobreak usam tempo real independente; avançar um dia virtual não vence nem prolonga uma sessão.
 
-O SQLite guarda o estado e o histórico de eventos. Após reiniciar, a aplicação recupera a última posição da porta, mas encerra qualquer liberação anterior. Um estado salvo não deve provocar uma nova abertura.
+O SQLite grava porta, energia, relógio e eventos na mesma transação. A migração adiciona tabelas e campos sem apagar o histórico anterior. Após reiniciar, recupera o cenário, encerra liberações e pausa o tempo em 1×. Não calcula retrospectivamente o intervalo com a aplicação fechada. A descrição dos pontos de salvamento e suas limitações está em [energy.md](energy.md).
+
+O desligamento virtual não encerra o servidor real: os controles do laboratório continuam acessíveis para restaurar energia e demonstrar operações manuais. Esses dados representam a visão interna do simulador, e não telemetria recebida de um equipamento sem alimentação.
+
+## Aparência
+
+O botão sol/lua escolhe tema claro ou escuro. A preferência fica apenas no navegador; na primeira visita, segue a configuração do sistema. A troca não altera o estado da porta nem depende da API.
 
 A base usa uma única instância do controlador. Executar vários processos de servidor sobre o mesmo banco exigiria coordenação adicional e está fora desta etapa.
 
+## Contas e nobreak
+
+`accounts.py` cuida de senhas, sessões, papéis e auditoria. `auth_api.py` protege as ações. A mesma trava de concorrência serializa autorização, revogação e alterações da porta. Tabelas de contas são separadas de eventos e estado físico virtual; futuras identidades biométricas também terão entidades próprias. Consulte [accounts.md](accounts.md).
+
+O nobreak comprado alimentará o computador. `ups.py` valida observações, campos desconhecidos e atraso de leitura; `GET /api/ups` é uma consulta autenticada. Não há driver produtor de leituras nesta entrega. A interface indica indisponibilidade, sem inventar porcentagem ou autonomia. O módulo não altera a porta e não recebe comandos dos controles de bateria virtual. Consulte [ups.md](ups.md).
+
 ## Evolução prevista
 
-Os próximos módulos acrescentarão o cálculo de energia, as contas e permissões, a comunicação simulada e o reconhecimento facial. O reconhecimento produzirá uma possível identidade; o controlador continuará responsável por verificar autorização antes de liberar a porta.
+Os próximos módulos acrescentarão comunicação simulada e reconhecimento facial. O reconhecimento produzirá uma possível identidade; o controlador continuará responsável por verificar autorização antes de liberar a porta.
 
 No módulo de conectividade, será necessário distinguir a verdade interna do simulador da última observação recebida pelo gerenciamento. Essa separação ainda não representa uma funcionalidade entregue.
 

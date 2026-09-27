@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml)
 
-Simulador de controle de acesso desenvolvido em Python. Esta primeira entrega permite operar uma porta virtual pelo navegador e consultar o histórico de eventos salvo em SQLite.
+Simulador de controle de acesso desenvolvido em Python. Permite operar uma porta virtual, testar quedas de energia e consultar o histórico de eventos salvo em SQLite.
 
-Tudo relacionado à porta, à trava e à chave é virtual. Não há integração com fechaduras físicas.
+Tudo relacionado à porta, à trava e à chave é virtual. O grupo decidiu comprar um **nobreak pronto para alimentar o computador**; esse é o único equipamento físico adicional previsto. A integração de suas leituras depende do modelo escolhido. Não há integração com fechaduras físicas.
 
 ## Começar no Windows
 
@@ -13,6 +13,9 @@ Tudo relacionado à porta, à trava e à chave é virtual. Não há integração
 1. Abra a pasta do projeto.
 2. Execute `iniciar.cmd` com um duplo clique.
 3. Aguarde a preparação do ambiente e acesse **http://127.0.0.1:8000** no navegador.
+4. Crie o primeiro administrador pela tela inicial. A senha precisa de no mínimo 6 caracteres, com letra maiúscula, minúscula, número e caractere especial; não há limite máximo nem senha padrão.
+
+Depois da configuração inicial, a tela de entrada oferece **Criar conta**. O cadastro fica aguardando aprovação em **Conta > Pessoas com acesso**. Um administrador pode aprovar ou recusar; o cadastro não concede permissões administrativas. Para entrar no aplicativo, é necessário fazer login com uma conta ativa.
 
 O iniciador prepara o ambiente Python local quando necessário e mantém o servidor funcionando na janela aberta. Para encerrar, use `Ctrl+C` nessa janela. Depois da instalação das dependências, a aplicação funciona sem acesso à internet.
 
@@ -43,12 +46,18 @@ O pacote inclui todo o código-fonte, interface, testes e documentação desta e
 - Impede a abertura externa quando a trava está engatada.
 - Permite fechar a porta, usar a chave simulada e demonstrar a saída interna.
 - Registra ações e resultados no banco local.
+- Simula bateria em Wh, consumo, recarga, economia, desligamento e recuperação.
+- Permite pausar, acelerar ou avançar o tempo da porta e da bateria juntos.
+- Alterna entre tema claro e escuro pelo botão de sol/lua, salvando a escolha no navegador.
 - Mantém as regras no servidor: fechar a página não prolonga a liberação.
-- Ao reiniciar, encerra a liberação anterior e recupera a última posição registrada da porta.
+- Ao reiniciar, encerra a liberação anterior, recupera o cenário salvo e deixa o tempo pausado em 1×.
+- Oferece login, contas de administrador/usuário, troca de senha e revogação imediata de sessões.
+- Aplica permissões na API e registra a autoria das ações.
+- Separa o painel do nobreak real da bateria virtual; sem integração, informa que não há leitura real.
 
 **Liberar a trava não abre a porta.** Depois da liberação, use a ação de entrada. Se o prazo acabar com a porta aberta, ela aguarda fechamento; o painel não deve indicar que está protegida.
 
-A chave simulada e a saída interna representam métodos manuais. Seus botões alteram somente a simulação.
+A chave simulada e a saída interna representam métodos manuais. Seus botões alteram somente a simulação e continuam disponíveis com o dispositivo virtual desligado. Os três segundos de liberação usam o relógio virtual: pausar congela o prazo; acelerar também o encurta no tempo real.
 
 ## Demonstração rápida
 
@@ -59,17 +68,19 @@ A chave simulada e a saída interna representam métodos manuais. Seus botões a
 5. Experimente a saída interna e a chave simulada.
 6. Confira o histórico e reinicie a aplicação para verificar a persistência.
 
+Para demonstrar energia, pause o relógio, corte a alimentação e avance seis horas. Observe o desligamento, experimente a saída manual e restaure a alimentação. Avance três segundos para concluir a recuperação sem desbloqueio automático. Os parâmetros e cálculos estão em [Energia virtual](docs/energy.md).
+
 ## Limites desta entrega
 
-Ainda não há login, cadastro de pessoas, reconhecimento facial, bateria simulada, falhas de conexão ou integração com n8n. Essas funções estão no roteiro de desenvolvimento; botões ou indicadores desta versão não devem ser apresentados como implementação dessas etapas.
+Ainda não há reconhecimento facial, cadastro biométrico, protocolo remoto com expiração/idempotência, cenários independentes de falhas de conexão, driver do nobreak ou integração com n8n. Essas funções estão no roteiro de desenvolvimento; não devem ser apresentadas como prontas.
 
-O servidor fica restrito ao próprio computador, em `127.0.0.1`. Como ainda não há autenticação, não o exponha à rede nem à internet. Esta etapa não exige coleta de imagens ou outros dados pessoais.
+O servidor fica restrito ao próprio computador, em `127.0.0.1`. O login protege o laboratório local; uma implantação na rede exigirá HTTPS e revisão da configuração. Use contas de demonstração, sem dados pessoais desnecessários. Esta etapa não coleta imagens.
 
-Não é necessário comprar hardware ou contratar hospedagem para executar a base em um computador disponível. O projeto continua dependendo desse computador e de sua alimentação elétrica; nenhuma bateria virtual o manterá ligado.
+O software funciona sem o nobreak e não exige hospedagem ou assinatura paga. A compra do nobreak é uma exceção ao escopo anterior sem custos; preço e autonomia ainda não foram definidos. Nenhuma bateria virtual mantém o computador ligado. O nobreak pode alimentar o computador mesmo sem comunicação USB, mas mostrar carga e autonomia exige interface e driver compatíveis. Ele também não garante internet durante a falta de energia.
 
 ## Dados e configuração
 
-O banco é criado em `data/everlock.sqlite3`, na pasta do projeto. Ele guarda o estado e os eventos da simulação. A pasta de dados fica fora do controle de versão.
+O banco é criado em `data/everlock.sqlite3`, na pasta do projeto. Ele guarda estado, eventos, contas, hashes de senhas e sessões. A pasta de dados fica fora do controle de versão. Faça cópias com o servidor parado e restrinja o acesso aos arquivos locais.
 
 As configurações opcionais são variáveis de ambiente:
 
@@ -98,11 +109,15 @@ Execute na pasta do projeto, depois da instalação:
 .\.venv\Scripts\python.exe -m ruff check .
 ```
 
-Os testes devem cobrir as regras da porta, o prazo de liberação, as rotas e a recuperação do estado. A verificação visual no navegador complementa esses testes.
+Os testes cobrem porta, energia, relógio, migração, recuperação, autenticação, papéis, revogação e o contrato de leituras do nobreak. Este último é testado com dados preparados, sem equipamento real. A verificação visual no navegador complementa esses testes.
 
 ## Documentação
 
 - [Arquitetura](docs/architecture.md)
+- [Planejamento e critérios de aceite](docs/planning.md)
+- [Energia virtual e roteiro de demonstração](docs/energy.md)
+- [Contas, permissões e recuperação de acesso](docs/accounts.md)
+- [Preparação para o nobreak real](docs/ups.md)
 - [API local](docs/api.md)
 - [Etapas de desenvolvimento](docs/roadmap.md)
 - [Estado atual](docs/status.md)
@@ -110,6 +125,6 @@ Os testes devem cobrir as regras da porta, o prazo de liberação, as rotas e a 
 
 ## Colaboração
 
-O trabalho futuro é organizado nas [issues](https://github.com/gustavonm20/EverLock/issues), nos [marcos](https://github.com/gustavonm20/EverLock/milestones) e no projeto [EverLock · Roadmap](https://github.com/users/gustavonm20/projects/3). O projeto contém Kanban, prioridades e uma visão de roadmap.
+O [planejamento no Notion](https://app.notion.com/p/3e7e2dde06ab81f68b2ece96ce4a61a2) reúne etapas, dependências, critérios e um Kanban. O GitHub concentra [issues](https://github.com/gustavonm20/EverLock/issues), revisão de código, testes e o [roadmap](https://github.com/users/gustavonm20/projects/3). Os quadros são atualizados por entrega; ainda não há sincronização automática.
 
 Consulte [CONTRIBUTING.md](CONTRIBUTING.md) antes de alterar o código e [SECURITY.md](SECURITY.md) para relatos de segurança. Este repositório não distribui imagens faciais, bancos locais ou credenciais.

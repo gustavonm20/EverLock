@@ -32,6 +32,8 @@ class Event:
     detail: str
     source: str = "lab"
     outcome: str = "success"
+    simulated_at: float | None = None
+    actor: str | None = None
 
 
 class Denied(Exception):

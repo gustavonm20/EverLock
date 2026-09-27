@@ -1,0 +1,42 @@
+:root{color-scheme:light}
+.topbar-actions{display:flex;align-items:center;gap:12px}
+.theme-toggle{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border:1px solid var(--line);border-radius:50%;color:var(--ink);background:var(--white)}
+.theme-toggle:hover{background:var(--green-pale)}
+.theme-toggle .icon{width:20px;height:20px}
+.theme-sun{display:none}
+[data-theme=dark] .theme-sun{display:block}
+[data-theme=dark] .theme-moon{display:none}
+:root[data-theme=dark]{color-scheme:dark;--ink:#e2f2e9;--text:#ccdfd4;--muted:#a6bcb0;--green:#85d5b5;--green-dark:#a8eace;--green-pale:#233e33;--paper:#101c17;--white:#192a22;--line:#365045;--amber:#edbd70;--amber-pale:#3b3021;--red:#ffab91}
+[data-theme=dark] .sidebar{background:#15251e}
+[data-theme=dark] .topbar{background:#14221c}
+[data-theme=dark] .nav-link{color:var(--muted)}
+[data-theme=dark] .nav-link:hover,[data-theme=dark] .nav-link.active{background:var(--green-pale);color:var(--ink)}
+[data-theme=dark] .brand-icon{background:#245b49;color:#def5e7}
+[data-theme=dark] .sidebar-bottom,[data-theme=dark] .manual-controls,[data-theme=dark] .history-footer,[data-theme=dark] .page-footer,[data-theme=dark] .event-item,[data-theme=dark] .roadmap-item{border-color:var(--line)}
+[data-theme=dark] .simulation-badge{background:#3a3320;color:#f4d589;border-color:#655636}
+[data-theme=dark] .connection-pill{background:#233e33;border-color:#3d6955;color:#a7e2bf}
+[data-theme=dark] .connection-warning,[data-theme=dark] .connection-pill[data-state=offline]{background:#392b23;border-color:#6c4838;color:#ffc3a9}
+[data-theme=dark] .metric-icon,[data-theme=dark] .section-number,[data-theme=dark] .subtle-badge,[data-theme=dark] .roadmap-icon,[data-theme=dark] .scene-badge{background:#23392d;border-color:var(--line);color:#bdd1bb}
+[data-theme=dark] .door-card,[data-theme=dark] .scene-panel{border-color:var(--line)}
+[data-theme=dark] .scene-panel{background:#1d3228}
+[data-theme=dark] .scene-orbit{border-color:#37513f}
+[data-theme=dark] .scene-caption strong{color:var(--ink)}
+[data-theme=dark] .reader{background:#365041;border-color:#536b53;box-shadow:2px 1px 0 #253b2e}
+[data-theme=dark] .reader .icon{color:#cadbbc}
+[data-theme=dark] .door-frame{border-color:#7b9077;box-shadow:5px 1px 0 #546a52,0 3px 0 #435e42}
+[data-theme=dark] .button-primary{background:#256e57;color:#fff}
+[data-theme=dark] .button-primary:hover:not(:disabled){background:#32876c}
+[data-theme=dark] .button-secondary,[data-theme=dark] .button-quiet{background:#23382d;color:var(--ink);border-color:#47614e}
+[data-theme=dark] .button-secondary:hover:not(:disabled),[data-theme=dark] .button-quiet:hover:not(:disabled){background:#314c3b}
+[data-theme=dark] .text-button{color:var(--green)}
+[data-theme=dark] .manual-heading h3,[data-theme=dark] .event-copy h3,[data-theme=dark] .roadmap-item h3{color:var(--ink)}
+[data-theme=dark] .action-feedback{background:#203329;color:var(--muted);border-color:var(--line)}
+[data-theme=dark] .action-feedback[data-outcome=success]{background:#203d2c;border-color:#3d664b;color:#b5e4ba}
+[data-theme=dark] .action-feedback[data-outcome=denied],[data-theme=dark] .action-feedback[data-outcome=error],[data-theme=dark] .energy-notice[data-state=powered_off],[data-theme=dark] .energy-notice[data-state=recovering]{background:var(--amber-pale);border-color:#6b5838;color:#f2ce90}
+[data-theme=dark] .activity-card{background:var(--white)}
+[data-theme=dark] .event-icon{background:#284331;color:#b4d8a8}
+[data-theme=dark] .event-item[data-outcome=denied] .event-icon{background:#443824;color:#efcb87}
+[data-theme=dark] .sidebar-section-label,[data-theme=dark] .sidebar-bottom p,[data-theme=dark] .version,[data-theme=dark] .eyebrow,[data-theme=dark] .status-card span:not(.metric-icon),[data-theme=dark] .scene-description,[data-theme=dark] .release-info,[data-theme=dark] .manual-heading>span,[data-theme=dark] .manual-controls p,[data-theme=dark] .event-copy p,[data-theme=dark] .event-time,[data-theme=dark] .event-time small,[data-theme=dark] .empty-state,[data-theme=dark] .history-footer,[data-theme=dark] .roadmap-item p,[data-theme=dark] .future-label,[data-theme=dark] .page-footer{color:var(--muted)}
+[data-theme=dark] .clock-settings select,[data-theme=dark] .parameter-grid input{border-color:#668273}
+[data-theme=dark] body.is-stale .status-card strong,[data-theme=dark] body.is-stale .scene-caption strong{color:#c2b694}
+@media(max-width:640px){.topbar-actions{gap:8px}.theme-toggle{width:36px;height:36px}.breadcrumb{font-size:9px}.breadcrumb span{padding:0 5px}}
