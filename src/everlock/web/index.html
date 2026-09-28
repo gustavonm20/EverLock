@@ -7,13 +7,15 @@
     <meta name="theme-color" content="#111312">
     <meta name="description" content="EverLock: laboratório de controle de acesso com uma porta inteiramente virtual.">
     <title>EverLock · Laboratório de acesso</title>
-    <link rel="icon" href="/static/favicon.svg?v=2" type="image/svg+xml">
+    <link rel="icon" href="/static/logo-everlock.png?v=3" type="image/png">
     <script src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/theme.css">
     <link rel="stylesheet" href="/static/auth.css">
+    <link rel="stylesheet" href="/static/communication.css">
     <script src="/static/app.js" defer></script>
     <script src="/static/auth.js" defer></script>
+    <script src="/static/communication.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Pular para o conteúdo</a>
@@ -32,17 +34,18 @@
       <symbol id="icon-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2m1-16a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v2"/></symbol>
       <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
       <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
+      <filter id="logo-light" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 -0.92 0 0 -0.46 1 -0.46 0 0 0 0 0.08 0 0 0 0 0 1 0"/></filter>
     </svg>
 
     <aside class="sidebar" aria-label="Navegação principal">
       <a class="brand" href="#simulador" aria-label="EverLock, início">
-        <span class="brand-icon"><img src="/static/favicon.svg?v=2" alt="" width="38" height="38"></span>
-        <span>Ever<span class="brand-light">Lock</span><small>LABORATÓRIO DE ACESSO</small></span>
+        <img class="brand-logo" src="/static/logo-everlock.png?v=3" alt="EverLock" width="180" height="120">
       </a>
       <div class="sidebar-section-label">ESPAÇO DE TRABALHO</div>
       <nav class="navigation">
         <a class="nav-link active" href="#simulador" aria-current="location"><svg class="icon"><use href="#icon-door"/></svg>Simulador</a>
-        <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Energia</a>
+        <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Status Nobreak</a>
+        <a class="nav-link" href="#comunicacao"><svg class="icon"><use href="#icon-network"/></svg>Conexão</a>
         <a class="nav-link" href="#atividade" data-admin><svg class="icon"><use href="#icon-activity"/></svg>Atividade</a>
         <a class="nav-link" href="#contas"><svg class="icon"><use href="#icon-users"/></svg>Conta</a>
         <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Etapas</a>
@@ -50,7 +53,7 @@
       <div class="sidebar-bottom">
         <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.3.0</span></span>
+        <span class="version">Versão <span id="version">0.4.0</span></span>
       </div>
     </aside>
 
@@ -62,7 +65,7 @@
 
       <section class="auth-panel" id="auth-panel" aria-labelledby="auth-title">
         <p class="eyebrow">ACESSO LOCAL</p><h1 id="auth-title">Entre no EverLock</h1>
-        <p id="auth-description">Verificando a configuração deste computador…</p>
+        <p id="auth-description">Entre com seu usuário e senha. Se ainda não tem uma conta, faça seu cadastro.</p>
         <form id="login-form" class="account-form">
           <label>Usuário<input name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+" placeholder="Seu nome de usuário"></label>
           <label>Senha<input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Sua senha" aria-describedby="password-rules"></label>
@@ -71,14 +74,14 @@
           <button class="button button-primary" id="auth-submit" type="submit">Entrar</button>
         </form>
         <p id="auth-message" role="status" aria-live="polite"></p>
-        <button class="text-button" id="auth-mode" type="button" hidden>Não tem conta? Criar conta</button>
+        <button class="text-button" id="auth-mode" type="button">Não tem conta? Criar conta</button>
         <button class="text-button" id="auth-refresh" type="button">Verificar conexão</button>
       </section>
 
       <main id="main" hidden>
         <section id="simulador" aria-labelledby="page-title">
           <div class="page-heading">
-            <div><p class="eyebrow">BASE DO SIMULADOR</p><h1 id="page-title">O acesso começa aqui.</h1><p class="page-description">Explore a porta virtual e acompanhe cada ação em tempo real.</p></div>
+            <div><p class="eyebrow">VISÃO LOCAL DO LABORATÓRIO</p><h1 id="page-title">O acesso começa aqui.</h1><p class="page-description">Explore a porta virtual. Compare esta cena local com a última leitura do painel remoto.</p></div>
             <div class="connection-pill" id="connection-pill" data-state="waiting"><span class="status-dot"></span><span id="connection-label">Conectando…</span></div>
           </div>
 
@@ -104,8 +107,8 @@
               <p class="scene-description" id="scene-description">As ações serão liberadas quando o simulador responder.</p>
             </div>
             <div class="controls-panel">
-              <div class="panel-heading"><span class="section-number">01</span><div><h2>Controle de entrada</h2><p>Libere a trava e, depois, abra a porta.</p></div></div>
-              <button type="button" class="button button-primary" data-action="unlock" disabled><svg class="icon"><use href="#icon-lock"/></svg><span>Liberar por 3 segundos</span><svg class="icon action-arrow"><use href="#icon-arrow"/></svg></button>
+              <div class="panel-heading"><span class="section-number">01</span><div><h2>Entrada por reconhecimento facial</h2><p>A identificação de uma pessoa autorizada permitirá liberar a trava.</p></div></div>
+              <details class="face-entry"><summary class="button button-primary"><svg class="icon"><use href="#icon-face"/></svg><span>Reconhecimento facial</span><svg class="icon action-arrow"><use href="#icon-arrow"/></svg></summary><div class="face-entry-info"><strong>Reconhecimento ainda não disponível</strong><p>O cadastro facial e a leitura pela câmera serão conectados a esta área. Abrir este painel não libera a porta e não ativa a câmera.</p></div></details>
               <div class="release-info"><span id="release-description">Liberação temporária da trava virtual.</span><button type="button" class="text-button" data-action="end_release" disabled>Encerrar liberação</button></div>
               <div class="button-pair"><button type="button" class="button button-secondary" data-action="open" disabled><svg class="icon"><use href="#icon-arrow"/></svg><span>Abrir / entrar</span></button><button type="button" class="button button-secondary" data-action="close" disabled><svg class="icon"><use href="#icon-door"/></svg><span>Fechar porta</span></button></div>
               <div class="manual-controls"><div class="manual-heading"><h3>Acesso manual</h3><span>SIMULADO</span></div><p>Experimente as alternativas de entrada e saída.</p><div class="button-pair"><button type="button" class="button button-quiet" data-action="exit" disabled><svg class="icon"><use href="#icon-arrow"/></svg><span>Saída interna</span></button><button type="button" class="button button-quiet" data-action="key_entry" disabled><svg class="icon"><use href="#icon-key"/></svg><span>Usar chave</span></button></div></div>
@@ -114,9 +117,50 @@
           </div>
         </section>
 
+        <section class="communication-card" id="comunicacao" aria-labelledby="communication-title">
+          <div class="section-heading"><div><p class="eyebrow">COMANDOS E CONFIRMAÇÕES</p><h2 id="communication-title">Painel remoto</h2></div><span class="subtle-badge">Canal simulado</span></div>
+          <p class="section-description">Acompanhe o que o dispositivo confirmou. Internet, rede local e energia podem falhar separadamente neste laboratório.</p>
+          <div class="network-readings">
+            <div><span>Internet simulada</span><strong id="network-internet">Aguardando</strong></div>
+            <div><span>Rede local simulada</span><strong id="network-lan">Aguardando</strong></div>
+            <div><span>Dispositivo virtual</span><strong id="network-device">Aguardando</strong></div>
+          </div>
+          <div class="remote-observation" id="remote-observation" data-stale="true">
+            <strong id="remote-door">Sem leitura recebida</strong>
+            <p id="remote-reading-age">Aguardando o canal remoto.</p>
+            <p id="remote-channel">Os controles serão liberados após uma leitura atual.</p>
+          </div>
+          <div class="remote-actions">
+            <label>Prazo do comando<select id="command-ttl"><option value="5">5 segundos</option><option value="10" selected>10 segundos</option><option value="30">30 segundos</option></select></label>
+            <button class="button button-primary" type="button" id="remote-unlock" disabled>Liberar trava</button>
+            <button class="button button-secondary" type="button" id="remote-lock" disabled>Engatar trava</button>
+          </div>
+          <p class="section-description">O prazo e o atraso do comando usam segundos reais. A liberação mantém os três segundos virtuais da porta. Engatar a trava exige porta fechada; a saída interna continua disponível.</p>
+          <p class="action-feedback" id="command-feedback" role="status" aria-live="polite">Solicitar um comando ainda não confirma sua execução.</p>
+          <details class="network-lab" data-admin>
+            <summary>Simular falhas e atraso</summary>
+            <form id="network-form">
+              <label><input type="checkbox" name="internet_available" checked> Internet disponível</label>
+              <label><input type="checkbox" name="lan_available" checked> Rede local disponível</label>
+              <label>Atraso na entrega<select name="delay_seconds"><option value="0">Sem atraso</option><option value="2">2 segundos reais</option><option value="15">15 segundos reais</option><option value="30">30 segundos reais</option></select></label>
+              <button class="button button-secondary" type="submit" id="apply-network" disabled>Aplicar cenário de rede</button>
+            </form>
+            <p>Teste atraso de 15 segundos com prazo de 5 segundos para ver a expiração. Interromper o canal cancela os envios pendentes; reconectar exige um novo comando.</p>
+            <button class="text-button" type="button" id="repeat-command" disabled>Repetir último envio para testar duplicata</button>
+            <p>O teste repete o mesmo identificador e apenas consulta o resultado se ele já foi registrado.</p>
+          </details>
+          <h3 class="command-history-heading">Histórico dos comandos</h3>
+          <p class="section-description">Usuários veem seus envios; administradores veem todos. Uma confirmação antiga descreve o instante da execução.</p>
+          <ol class="command-history" id="command-history"><li>Nenhum comando carregado.</li></ol>
+        </section>
+
         <section class="energy-card" id="energia" aria-labelledby="energy-title">
-          <div class="section-heading"><div><p class="eyebrow">LABORATÓRIO DE FALHAS</p><h2 id="energy-title">E quando a energia acaba?</h2></div><span class="subtle-badge">Bateria virtual</span></div>
-          <p class="section-description">Corte a alimentação, avance o tempo e acompanhe a reserva. Os valores são didáticos: a bateria virtual não mantém o computador ligado.</p>
+          <div class="section-heading"><div><p class="eyebrow">CONTINUIDADE DE ENERGIA</p><h2 id="energy-title">Status Nobreak</h2></div><span class="subtle-badge">Uso externo</span></div>
+          <p class="section-description">O nobreak alimenta o computador utilizado pelo grupo. Ele não se conecta ao EverLock e não recebe comandos da aplicação.</p>
+          <div class="ups-external-status" role="status"><strong>Sem monitoramento pelo aplicativo</strong><p>Consulte a carga, os alertas e a autonomia no próprio nobreak. Estar conectado ao EverLock não confirma que o computador esteja usando a bateria do equipamento.</p></div>
+          <p class="section-description">Durante uma falta de energia, o EverLock continua funcionando enquanto o computador permanecer ligado. Se o computador desligar, o aplicativo também para. O nobreak não garante acesso à internet.</p>
+          <details class="virtual-power-lab" data-admin><summary>Cenários virtuais para testes</summary>
+          <p class="section-description">Os controles abaixo alteram somente a porta e a bateria do simulador. Não medem, cortam ou restauram a energia do computador ou do nobreak.</p>
           <div class="energy-grid">
             <div class="power-readings">
               <div class="battery-heading"><span>Carga da bateria</span><strong id="battery-percent">—</strong></div>
@@ -158,6 +202,7 @@
               <button type="submit" class="button button-secondary" id="apply-power-config" disabled>Preparar cenário e pausar</button>
             </form>
           </details>
+          </details>
         </section>
 
         <section class="activity-card" id="atividade" aria-labelledby="activity-title" data-admin>
@@ -165,14 +210,6 @@
           <p class="section-description">Ações da porta e transições de energia, com data real e instante virtual.</p>
           <div id="events" class="events-list" aria-busy="true"><div class="empty-state">Carregando o histórico…</div></div>
           <div class="history-footer"><svg class="icon"><use href="#icon-check"/></svg>Histórico salvo neste computador.</div>
-        </section>
-
-        <section class="account-section" id="nobreak" aria-labelledby="ups-title">
-          <p class="eyebrow">ALIMENTAÇÃO DO COMPUTADOR</p><h2 id="ups-title">Nobreak real</h2>
-          <p>O grupo prevê usar um nobreak para alimentar este computador. A bateria do laboratório acima continua sendo uma simulação independente.</p>
-          <p id="ups-status" role="status">Integração aguardando modelo compatível. Nenhuma leitura real disponível.</p>
-          <p id="ups-reading"></p>
-          <p>Os botões de energia virtual não desligam o computador ou o nobreak. Alimentação de emergência também não garante conexão com a internet.</p>
         </section>
 
         <section class="account-section" id="contas" aria-labelledby="account-title">
@@ -186,7 +223,7 @@
           </form>
           <div data-admin>
             <h3>Pessoas com acesso</h3>
-            <p>Usuários operam a porta virtual. Administradores também controlam cenários de energia, chave de demonstração, contas e histórico. O último administrador ativo é preservado.</p>
+            <p>Usuários acompanham a porta e enviam comandos pelo painel remoto. Administradores também controlam cenários de teste, chave de demonstração, contas e histórico. O último administrador ativo é preservado.</p>
             <form id="new-user-form" class="account-form">
               <label>Novo usuário<input name="username" autocomplete="off" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+"></label>
               <label>Senha inicial<input name="password" type="password" autocomplete="new-password" required data-new-password aria-describedby="account-password-rules"></label>
@@ -201,12 +238,12 @@
 
         <section id="evolucao" class="roadmap" aria-labelledby="roadmap-title">
           <div class="section-heading"><div><p class="eyebrow">CONSTRUÍDO EM ETAPAS</p><h2 id="roadmap-title">A base de algo maior.</h2></div><span class="subtle-badge">Em desenvolvimento</span></div>
-          <p class="section-description">Porta, energia virtual, contas e permissões já estão disponíveis. O próximo passo é simular comandos e falhas de conexão.</p>
+          <p class="section-description">Porta, energia, contas e comunicação simulada estão disponíveis. O próximo passo é preparar o cadastro facial com consentimento.</p>
           <div class="roadmap-grid">
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emergência</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Disponível no laboratório</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permissões</h3><p>Contas, autorizações e gerenciamento de quem pode entrar.</p><span class="future-label">Disponível no laboratório</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-face"/></svg></span><h3>Reconhecimento facial</h3><p>Identificação por imagens integrada às regras de acesso.</p><span class="future-label">Planejado</span></article>
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-network"/></svg></span><h3>Falhas de conexão</h3><p>Cenários de indisponibilidade, atraso e reconexão do dispositivo.</p><span class="future-label">Planejado</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-network"/></svg></span><h3>Falhas de conexão</h3><p>Comandos com prazo, atraso, observação antiga e reconexão segura.</p><span class="future-label">Disponível no laboratório</span></article>
           </div>
         </section>
         <footer class="page-footer"><span>EverLock · Laboratório de controle de acesso</span><span>Software local. Porta inteiramente virtual.</span></footer>

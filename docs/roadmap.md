@@ -4,7 +4,7 @@ O trabalho será executado em incrementos pela IA, com implementação, testes, 
 
 ## Situação atual
 
-A base e a porta virtual estão entregues. Energia, tema, contas e permissões estão implementados no incremento 0.3, com validação registrada em [status.md](status.md). A preparação para o nobreak real inclui contrato de leitura e separação da simulação, mas ainda não inclui driver. O quadro detalhado fica em [planning.md](planning.md) e no [Notion](https://app.notion.com/p/3e7e2dde06ab81f68b2ece96ce4a61a2).
+A base, porta, energia, tema, contas e permissões estão entregues. O incremento 0.4 acrescenta comandos com prazo real, confirmação e falhas de conexão simuladas, com validação em [status.md](status.md). O nobreak será usado somente para alimentar o computador; sua integração por software foi retirada do escopo. O quadro detalhado fica em [planning.md](planning.md) e no [Notion](https://app.notion.com/p/EverLock-3e8e2dde06ab809c893fcbd6a4958ff8).
 
 | Etapa | Entrega | Critério de conclusão |
 |---|---|---|
@@ -14,7 +14,7 @@ A base e a porta virtual estão entregues. Energia, tema, contas e permissões e
 | 4. Pessoas e permissões | Login, perfis, cadastro, revogação e histórico administrativo | Backend rejeita ações sem permissão; dados persistem |
 | 5. Comunicação | Comandos identificados, validade, duplicatas, desconexão e política local | Comando antigo não executa após reconexão; observações antigas ficam identificadas |
 | 6. Reconhecimento | Cadastro e comparação real de imagens; modo de testes separado | Imagens de teste distintas do cadastro; autorização consultada antes da liberação |
-| Paralela: nobreak | Validar modelo/OS, alimentar computador e integrar leituras compatíveis | Continuidade medida; perda USB identificada; simulação não comanda equipamento |
+| Paralela: nobreak | Alimentar o computador e registrar um teste real | Continuidade medida; nenhuma leitura ou comando físico pela aplicação |
 | 7. Interface e laboratório | Telas consolidadas, falhas e cenários reproduzíveis | Cenários compreensíveis sem conhecer o código |
 | 8. Testes completos | Integração, falhas, recuperação e avaliação facial | Cenários obrigatórios aprovados e limitações registradas |
 | 9. n8n, opcional | Alertas e relatórios por eventos | Integração não controla a porta e sua ausência não interrompe o sistema |
@@ -22,7 +22,7 @@ A base e a porta virtual estão entregues. Energia, tema, contas e permissões e
 
 ## Próximo incremento
 
-Acrescentar o protocolo de comandos: identificador único, validade, tratamento de duplicatas e confirmações de execução. Em seguida, simular perdas de internet, rede local e energia do dispositivo separadamente. Um comando antigo não poderá liberar a porta ao reconectar.
+Implementar consentimento, cadastro e exclusão de identidades biométricas separadas das contas. Depois selecionar e validar o pipeline de reconhecimento local, usando imagens autorizadas distintas para cadastro e avaliação. Resultados preparados para testes devem ser identificados como simulados. O protocolo de comandos e a reconexão sem execução de pedidos antigos estão descritos em [communication.md](communication.md).
 
 A energia virtual usa Wh e parâmetros didáticos explícitos. Seus resultados não representam medições do nobreak. O grupo comprará somente esse equipamento adicional para sustentar o computador; autonomia e compatibilidade serão verificadas com o modelo real. Desligar o computador continua encerrando a aplicação.
 
@@ -30,7 +30,7 @@ A energia virtual usa Wh e parâmetros didáticos explícitos. Seus resultados n
 
 - O reconhecimento real exige imagens autorizadas para cadastro e avaliação.
 - Webcam é opcional e depende de equipamento disponível e permissão de uso.
-- Informar marca/modelo do nobreak, interface de dados, sistema operacional e cargas alimentadas antes de implementar o driver; ver [ups.md](ups.md).
+- Registrar o modelo do nobreak e as cargas alimentadas antes da demonstração real; não haverá driver no EverLock. Ver [ups.md](ups.md).
 - Novas exigências acadêmicas podem alterar prioridade ou linguagem.
 
 A ausência de imagens não impede desenvolver os demais módulos com resultados preparados, desde que identificados como simulados. Testes preparados não medem a precisão do reconhecimento facial.

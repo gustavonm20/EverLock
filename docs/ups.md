@@ -1,58 +1,43 @@
-# Nobreak real: preparação da integração
+# Nobreak: alimentação externa do computador
 
-## Mudança confirmada em 26/09/2026
+## Escopo confirmado em 28/09/2026
 
-O grupo informou que comprará um nobreak pronto. Esse é o único componente físico adicional previsto. Porta, trava e sensores continuam virtuais; não haverá circuito de fechadura ou montagem elétrica. A compra passa a ser uma exceção ao objetivo anterior de custo zero. Não há modelo, preço, duração mínima ou equipamento anfitrião definidos.
+O grupo comprará um nobreak pronto **para alimentar o computador**. O equipamento não será integrado ao EverLock por USB, rede, driver ou API. Porta, trava e sensores continuam virtuais. Modelo, preço e duração de backup não foram informados.
 
-## Alimentação e monitoramento são entregas diferentes
-
-1. **Alimentar o computador:** conectar conforme o manual e demonstrar continuidade do programa durante uma interrupção controlada. Pode funcionar mesmo sem comunicação com o EverLock.
-2. **Ler o nobreak:** depende de modelo, sistema operacional e interface de dados compatíveis. USB de carregamento não comprova telemetria. Sem comunicação, carga e autonomia ficam desconhecidas.
-
-A bateria virtual permanece independente, em `power` e `/api/simulation/*`. Seus Wh e seus limiares não representam medições do nobreak. O módulo `ups.py` prepara um contrato de observação real, consultado em `GET /api/ups`; não há driver instalado, descoberta USB, leitura física nem controle de tomadas nesta versão.
-
-## Arquitetura proposta
+Essa decisão substitui a proposta anterior de desenvolver um adaptador para ler carga e autonomia. Não é necessário instalar NUT, biblioteca de USB ou software de integração para executar o EverLock.
 
 ```mermaid
 flowchart LR
-    AC["Tomada conforme manual"] --> UPS["Nobreak pronto"] --> PC["Computador com EverLock"]
-    UPS -. "USB de dados ou rede, se compatível" .-> Driver["Software do fabricante ou NUT"]
-    Driver -. "Futuro adaptador somente de leitura" .-> Monitor["UPSMonitor: horário real"]
-    Monitor --> Panel["Painel Nobreak real"]
-    Simulator["Energia virtual: tempo acelerável"] --> Lab["Painel do laboratório"]
+    Tomada["Alimentação elétrica"] --> Nobreak["Nobreak pronto"] --> Computador["Computador"]
+    Computador --> Aplicacao["EverLock em execução"]
+    Aplicacao --> Simulacao["Porta e cenários virtuais"]
 ```
 
-O [Network UPS Tools (NUT)](https://networkupstools.org/docs/user-manual.chunked/Overview.html) é um candidato de integração: usa drivers, servidor e clientes, com suporte dependente do equipamento. A escolha entre NUT e software do fabricante fica condicionada ao modelo e ao sistema; não foi assumida compatibilidade com Windows ou com qualquer nobreak genérico. Consultar documentação e licença da versão adotada antes da implementação.
+## O que a aplicação mostra
 
-## Contrato já preparado
+A seção **Status Nobreak** explica o uso externo e informa **Sem monitoramento pelo aplicativo**. Não exibe porcentagem, presença de energia ou autonomia reais, pois não recebe essas informações. A conexão com o servidor prova apenas que a aplicação respondeu.
 
-- Origem fixa `real_ups`, distinta do estado matemático.
-- Estados `not_configured`, `available`, `stale` e `unavailable`.
-- Observação com horário real e fuso, modelo, presença de rede, carga percentual e autonomia reportada. Campos não fornecidos permanecem nulos.
-- Leitura com idade de 15 segundos ou mais fica desatualizada. Esse limite provisório pressupõe futura coleta a cada 5 segundos; validar após escolher o adaptador.
-- Falha de coleta pode conservar a última leitura, mas nunca a apresenta como atual. Observações mais antigas são ignoradas; horários futuros são recusados.
-- Nenhuma rota aceita valores manuais para apresentá-los como medição real. O contrato é alimentado internamente apenas pelo futuro adaptador.
-- Pausar/acelerar o simulador não altera a idade da leitura real. Falha do monitor não muda a porta.
+O cartão separado **Nobreak real** foi retirado. A rota autenticada `GET /api/ups`, mantida para compatibilidade, retorna `source: "external_equipment"`, `status: "not_monitored"`, `observation: null` e `controls_available: false`. Nenhuma rota controla o equipamento. O antigo módulo isolado `ups.py` não é carregado pela aplicação e não constitui uma integração ativa.
 
-O futuro coletor deverá usar timeout curto, cache e reconexão limitada, fora da trava principal do simulador. Inicialmente será somente de leitura, com permissões mínimas e serviço local; credenciais e endereços não serão publicados. A aplicação não enviará desligamento, teste de bateria ou corte de saída ao nobreak.
+## Simulação de energia
 
-## O que confirmar antes de integrar
+Os controles matemáticos anteriores permanecem em **Status Nobreak > Cenários virtuais para testes**, recolhidos e disponíveis para administradores. Alteram somente `/api/simulation/*`: bateria virtual, tempo, disponibilidade do dispositivo virtual e suas regras de recuperação. Não são leituras do nobreak nem cortam energia do computador.
 
-- Marca, modelo exato e revisão; manual e software oficial.
-- Sistema operacional do computador e interface de dados disponível.
-- Potência real da carga em W, limite de W e VA do nobreak, tensão, conectores e compatibilidade da fonte do computador, conforme fabricantes.
-- Duração pretendida e necessidade de manter monitor/roteador ligados. Nobreak do computador não garante internet, nem alimentação do provedor.
-- Campos que o equipamento realmente fornece; data/hora e qualidade das estimativas.
+Assim, é possível testar falhas do software sem desligar o computador. Os valores em Wh e a autonomia estimada continuam didáticos; consulte [energy.md](energy.md).
 
-VA é capacidade de potência aparente, não reserva de energia. Não se obtém autonomia só com VA, e Ah sem tensão não descreve Wh. A autonomia real depende da carga, bateria, conversão e envelhecimento; será medida, sem reaproveitar a estimativa virtual de 40 Wh.
+## Funcionamento durante falta de energia
 
-## Etapas e aceite
+- Enquanto o nobreak sustentar o computador, o processo do EverLock pode continuar funcionando.
+- Se o computador desligar, o servidor e a interface local deixam de funcionar; uma simulação não mantém o computador ligado.
+- Ao reiniciar o EverLock, liberações anteriores não são retomadas e comandos pendentes são cancelados.
+- Alimentar o computador não garante conectividade do roteador ou do provedor.
 
-1. Registrar modelo, carga e manual; confirmar que a compra atende alimentação e, se desejado, telemetria.
-2. Manter a distinção real/virtual no código e nas telas (preparada nesta versão).
-3. Validar driver e coletar somente os campos suportados; testar desconexão de dados, reconexão e leitura antiga com amostras de teste identificadas.
-4. Com equipamento disponível, fazer teste supervisionado segundo o manual: registrar carga inicial, início/fim da interrupção, continuidade do servidor, retorno da rede e integridade do banco. Não abrir equipamento nem fazer montagem de rede elétrica.
-5. Configurar encerramento seguro no software suportado pelo fabricante/sistema. Testar com arquivos salvos e reserva suficiente; não forçar esgotamento para uma apresentação.
-6. Registrar duração observada, condições e limites. Na retomada, preservar banco e contas e não repetir liberação anterior.
+## Verificação com o equipamento
 
-**Demonstração:** primeiro executar cenários virtuais; depois identificar claramente o teste de alimentação real. O grupo opera o equipamento conforme o manual. Comprar o nobreak não comprova leitura de carga, tempo garantido de autonomia ou funcionamento remoto durante uma falha da internet.
+1. Registrar modelo do nobreak, computador e demais cargas alimentadas.
+2. Conferir compatibilidade e conexão conforme o manual do equipamento.
+3. Salvar arquivos e iniciar o EverLock com dados de demonstração.
+4. Realizar uma interrupção supervisionada conforme o manual, registrando horário e continuidade da aplicação.
+5. Restaurar a alimentação com reserva suficiente e conferir o histórico do aplicativo.
+
+Não há prazo de autonomia prometido. O resultado deve ser medido com o equipamento e a carga reais. O aplicativo não precisa descobrir ou monitorar o nobreak para funcionar.

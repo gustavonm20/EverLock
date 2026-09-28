@@ -39,8 +39,8 @@
         signal: controller.signal,
       });
       const body = await response.json();
-      if (response.status === 401) document.dispatchEvent(new Event("everlock-login-required"));
       if (generation !== sessionGeneration) throw new Error("Session changed");
+      if (response.status === 401) document.dispatchEvent(new Event("everlock-login-required"));
       return { response, body };
     } finally {
       window.clearTimeout(timeout);
@@ -163,7 +163,7 @@
     const remaining = Math.max(0, Number(door.release_remaining_seconds) || 0);
     const remainingLabel = `${remaining.toFixed(1).replace(".", ",")} s`;
 
-    elements.version.textContent = state.version || "0.2.0";
+    elements.version.textContent = state.version || "0.4.0";
     elements["door-position"].textContent = isOpen ? "Aberta" : "Fechada";
     elements["door-hint"].textContent = isOpen ? "Feche para concluir o acesso" : "Posição confirmada no simulador";
     elements["lock-position"].textContent = released ? "Liberada" : pending ? "Aguardando" : "Engatada";
@@ -177,11 +177,11 @@
     elements["door-summary"].textContent = isOpen ? "Porta aberta" : released ? "Entrada liberada" : "Porta fechada · trava engatada";
     elements["scene-description"].textContent = isOpen
       ? "A porta precisa ser fechada para concluir o acesso."
-      : released ? "Use “Abrir / entrar” antes que a liberação termine." : "Libere a entrada ou experimente o acesso manual.";
+      : released ? "Use “Abrir / entrar” antes que a liberação termine." : "Acesso facial em preparação. Comandos remotos e acesso manual ficam nas áreas próprias.";
     elements["release-description"].textContent = state.device.status !== "online"
       ? "Dispositivo virtual indisponível; acesso manual disponível."
       : released ? `Entrada liberada por mais ${remainingLabel} virtuais${state.simulation.paused ? " (tempo pausado)" : ""}.`
-        : "Liberação de 3 segundos no relógio virtual.";
+        : "A trava só será liberada após autorização. O reconhecimento facial ainda está em preparação.";
     updatePower(state);
     setConnection(true);
   }
@@ -322,25 +322,9 @@
     if (polling || actionInProgress || !document.body.dataset.role) return;
     polling = true;
     try {
-      await Promise.allSettled([updateStatus(), updateEvents(), updateUPS()]);
+      await Promise.allSettled([updateStatus(), updateEvents()]);
     } finally {
       polling = false;
-    }
-  }
-
-  async function updateUPS() {
-    const status = document.getElementById("ups-status");
-    const reading = document.getElementById("ups-reading");
-    try {
-      const { response, body } = await request("/api/ups");
-      if (!response.ok) throw new Error("UPS unavailable");
-      const labels = { not_configured: "Integração aguardando modelo compatível. Nenhuma leitura real disponível.", unavailable: "Leitura real indisponível. Não é possível confirmar a alimentação.", stale: "Última leitura real desatualizada. Não representa confirmação do estado atual.", available: "Leitura recebida do nobreak real." };
-      status.textContent = labels[body.status] || "Estado do nobreak desconhecido.";
-      const value = body.observation;
-      reading.textContent = value ? `${body.status === "available" ? "Leitura" : "Última leitura conhecida"}: ${new Date(value.observed_at).toLocaleString("pt-BR")} · Rede: ${value.external_power === null ? "não informada" : value.external_power ? "presente" : "ausente"} · Carga: ${value.battery_percent === null ? "não informada" : `${numberFormat.format(value.battery_percent)}%`} · Autonomia informada pelo equipamento: ${value.runtime_seconds === null ? "não disponível" : duration(value.runtime_seconds)}` : "";
-    } catch {
-      status.textContent = "Sem conexão para consultar o nobreak. Estado real desconhecido.";
-      reading.textContent = "";
     }
   }
 

@@ -6,7 +6,7 @@ Registro inicial: 23 de setembro de 2026.
 
 **Atualização confirmada pelo usuário em 26/09/2026:** o grupo comprará somente um nobreak pronto para alimentar o computador. Porta, trava e sensores continuam simulados; não haverá construção de fechadura ou montagem elétrica. O projeto usa um computador disponível, sem hospedagem paga obrigatória.
 
-Essa decisão substitui a restrição anterior de nenhuma compra física. Modelo, custo e autonomia continuam indefinidos. A energia virtual permanece um modelo didático independente da futura telemetria real. O software funciona sem o nobreak. Alimentar o computador e ler informações do equipamento são integrações diferentes, detalhadas em [ups.md](ups.md).
+Essa decisão substitui a restrição anterior de nenhuma compra física. Modelo, custo e autonomia continuam indefinidos. Em 28/09/2026, o grupo definiu o uso somente na alimentação do computador, sem telemetria ou integração ao software. A energia virtual permanece um modelo didático independente. O software funciona sem o nobreak; veja [ups.md](ups.md).
 
 ## 2. Python no backend do MVP
 
@@ -60,6 +60,6 @@ Contas e sessões vivem em tabelas próprias. Senhas usam scrypt com salt; somen
 
 **Ajuste solicitado em 27/09/2026:** oferecer cadastro na tela de entrada e aceitar novas senhas com mínimo de 6 caracteres, sem máximo, exigindo maiúscula, minúscula, número e símbolo. Login de contas anteriores permanece compatível. O cadastro aguarda aprovação administrativa e não permite escolher privilégios; essa é a política inicial de implementação.
 
-## 12. Preparar o contrato antes de escolher o driver
+## 12. Nobreak externo, sem integração por software
 
-O módulo do nobreak aceita observações validadas, identifica a fonte real e marca atraso após 15 segundos reais. Campos desconhecidos ficam nulos. Nesta versão não há produtor dessas leituras: a API informa `not_configured`. Escolher NUT ou software do fabricante somente após verificar o modelo e o sistema operacional. A primeira integração será de leitura; não oferecer desligamento físico pelo painel do simulador.
+A decisão de 28/09/2026 substitui a preparação anterior de telemetria. O aplicativo não carrega o monitor antigo nem consulta USB, rede ou software de fabricante. Status Nobreak informa ausência de monitoramento e a API de compatibilidade responde `not_monitored`, sem medições. A continuidade será demonstrada com o equipamento alimentando o computador. Os cenários matemáticos continuam identificados e recolhidos para testes.

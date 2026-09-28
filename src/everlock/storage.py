@@ -39,6 +39,23 @@ class Storage:
                 power_json TEXT NOT NULL,
                 timeline_json TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS remote_commands (
+                id TEXT PRIMARY KEY, action TEXT NOT NULL, user_id INTEGER NOT NULL,
+                actor TEXT NOT NULL, session_hash TEXT NOT NULL, expected_version TEXT NOT NULL,
+                valid_for_seconds INTEGER NOT NULL, requested_at REAL NOT NULL,
+                expires_at REAL NOT NULL, status TEXT NOT NULL,
+                code TEXT NOT NULL, message TEXT NOT NULL, finished_at REAL
+            );
+            CREATE TABLE IF NOT EXISTS command_transitions (
+                id INTEGER PRIMARY KEY, command_id TEXT NOT NULL,
+                status TEXT NOT NULL, occurred_at REAL NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS command_owner_time
+                ON remote_commands(user_id, requested_at);
+            CREATE TABLE IF NOT EXISTS network_state (
+                id INTEGER PRIMARY KEY CHECK(id=1), internet_available INTEGER NOT NULL,
+                lan_available INTEGER NOT NULL, delay_seconds REAL NOT NULL
+            );
         """)
         columns = {row["name"] for row in self.connection.execute("PRAGMA table_info(events)")}
         if "simulated_at" not in columns:
@@ -73,7 +90,8 @@ class Storage:
         timeline.speed = 1
         return power, timeline
 
-    def save(self, door: Door, events: list[Event], power: Power, timeline: Timeline) -> None:
+    def save(self, door: Door, events: list[Event], power: Power, timeline: Timeline,
+             command_result: tuple[str, str, str, str, float] | None = None) -> None:
         with self.connection:
             self.connection.execute(
                 """INSERT INTO door_state (id, position, revision, updated_at) VALUES (1, ?, ?, ?)
@@ -93,6 +111,20 @@ class Storage:
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 [(event.type, event.title, event.detail, event.source, event.outcome,
                   door.updated_at, event.simulated_at, event.actor) for event in events],
+            )
+            if command_result is not None:
+                self.finish_command(*command_result)
+
+    def finish_command(self, command_id, status, code, message, now):
+        changed = self.connection.execute(
+            """UPDATE remote_commands SET status=?, code=?, message=?, finished_at=?
+               WHERE id=? AND status IN ('requested', 'accepted')""",
+            (status, code, message, None if status == "accepted" else now, command_id),
+        )
+        if changed.rowcount:
+            self.connection.execute(
+                "INSERT INTO command_transitions(command_id,status,occurred_at) VALUES (?,?,?)",
+                (command_id, status, now),
             )
 
     def events(self, limit: int) -> list[dict]:

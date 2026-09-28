@@ -7,13 +7,15 @@ flowchart LR
     Browser["Navegador\nInterface em português"] -->|"Ações HTTP"| API["API FastAPI"]
     API --> Auth["Contas e sessão\nTempo real"]
     Auth --> Controller["Controlador da simulação"]
+    Auth --> Communication["Canal remoto simulado\nPrazos reais e comandos"]
+    Communication --> Controller
+    Communication <--> Store
     Controller --> Clock["Relógio virtual único"]
     Clock --> Door["Porta e liberação"]
     Clock --> Power["Bateria e recuperação"]
     Controller <--> Store["SQLite\nEstado e eventos"]
     Auth <--> Store
-    API --> UPS["Contrato de leitura do nobreak\nSem driver nesta versão"]
-    Future["Futuro driver compatível"] -.-> UPS
+    UPS["Nobreak externo"] --> PC["Alimentação do computador"]
     Controller -->|"Estado e resultado"| API
     API -->|"Resposta"| Browser
 ```
@@ -52,12 +54,12 @@ A base usa uma única instância do controlador. Executar vários processos de s
 
 `accounts.py` cuida de senhas, sessões, papéis e auditoria. `auth_api.py` protege as ações. A mesma trava de concorrência serializa autorização, revogação e alterações da porta. Tabelas de contas são separadas de eventos e estado físico virtual; futuras identidades biométricas também terão entidades próprias. Consulte [accounts.md](accounts.md).
 
-O nobreak comprado alimentará o computador. `ups.py` valida observações, campos desconhecidos e atraso de leitura; `GET /api/ups` é uma consulta autenticada. Não há driver produtor de leituras nesta entrega. A interface indica indisponibilidade, sem inventar porcentagem ou autonomia. O módulo não altera a porta e não recebe comandos dos controles de bateria virtual. Consulte [ups.md](ups.md).
+O nobreak comprado alimentará o computador, sem integração ao EverLock. A seção Status Nobreak informa a ausência de monitoramento; os testes virtuais ficam recolhidos. `GET /api/ups` permanece como resposta informativa de compatibilidade, sem observações nem controles. O antigo módulo `ups.py` não é carregado pela aplicação. Consulte [ups.md](ups.md).
 
 ## Evolução prevista
 
-Os próximos módulos acrescentarão comunicação simulada e reconhecimento facial. O reconhecimento produzirá uma possível identidade; o controlador continuará responsável por verificar autorização antes de liberar a porta.
+O próximo módulo acrescentará consentimento e cadastro de identidades biométricas. Depois, o reconhecimento produzirá uma possível identidade; o controlador continuará responsável por verificar autorização antes de liberar a porta.
 
-No módulo de conectividade, será necessário distinguir a verdade interna do simulador da última observação recebida pelo gerenciamento. Essa separação ainda não representa uma funcionalidade entregue.
+O módulo de comunicação já separa a verdade interna (`/api/status`) da última observação remota (`/api/communication`). Internet, rede local e energia têm estados próprios. UUID, prazo monotônico real, verificação de versão e revalidação da sessão protegem cada comando; a decisão final e a atuação compartilham uma transação SQLite. Falhas cancelam os pendentes, sem fila após reconexão. Consulte [communication.md](communication.md).
 
 A integração opcional com n8n receberá eventos para alertas e relatórios. Ela não participará da decisão de acesso nem será necessária ao funcionamento da porta virtual.

@@ -1,6 +1,6 @@
 # Contas e permissões locais
 
-Na primeira abertura, o navegador pede a criação do administrador. Não há senha padrão ou conta pré-cadastrada. Usuários têm 3 a 32 caracteres ASCII (letras, números, ponto, hífen ou sublinhado), normalizados em minúsculas.
+Na primeira abertura, o navegador mostra login com a opção **Não tem conta? Criar conta**. O cadastro só aparece ao selecionar essa opção; quando não existe conta, ele prepara o primeiro administrador. Não há senha padrão ou conta pré-cadastrada. Usuários têm 3 a 32 caracteres ASCII (letras, números, ponto, hífen ou sublinhado), normalizados em minúsculas.
 
 ## Cadastro e senha
 
@@ -14,8 +14,9 @@ O login verifica a senha existente sem reaplicar a regra de criação: contas an
 
 | Operação | Usuário | Administrador |
 |---|---|---|
-| Consultar porta, energia e disponibilidade do nobreak | Sim | Sim |
-| Liberar/encerrar liberação, entrar, fechar e demonstrar saída interna | Sim | Sim |
+| Consultar porta, energia virtual e aviso de nobreak externo | Sim | Sim |
+| Comandos remotos, encerrar liberação, entrar, fechar e saída interna | Sim | Sim |
+| Liberação direta pela API de testes locais (`/api/actions`, `unlock`) | Não | Sim |
 | Demonstrar chave de acesso | Não | Sim |
 | Preparar cenário e controlar energia/relógio | Não | Sim |
 | Consultar histórico da porta e de contas | Não | Sim |
