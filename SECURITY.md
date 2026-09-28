@@ -14,7 +14,7 @@ A aplicação fica em `127.0.0.1`, com sessão local, papéis, senhas com hash s
 
 HTTPS, implantação remota, criptografia de futuros templates biométricos e protocolo de comandos com expiração ainda exigem etapas próprias. A autenticação local não torna esta versão apropriada para exposição pública.
 
-O futuro nobreak alimentará o computador. Sua integração de leitura é separada da simulação: valores desconhecidos ficam indisponíveis, dados antigos são identificados e não há controle de tomadas ou desligamento real pela API. Os botões de energia do laboratório nunca devem comandar o equipamento ou o sistema operacional.
+O nobreak alimentará o computador sem integração ao EverLock. Não há leitura USB/rede, controle de tomadas ou desligamento real pela API. Status Nobreak informa ausência de monitoramento; os controles recolhidos de energia virtual nunca comandam o equipamento ou o sistema operacional.
 
 O projeto não declara certificação, conformidade legal ou adequação a uma instalação física. A análise de obrigações da LGPD será documentada antes do uso de dados biométricos.
 
