@@ -85,7 +85,8 @@ def test_user_permissions_and_immediate_revocation(accounts):
     login(client, "pessoa")
     user_token = client.cookies.get("everlock_session")
     assert client.get("/api/status").status_code == 200
-    assert client.post("/api/actions", json={"action": "unlock"}).status_code == 200
+    assert client.post("/api/actions", json={"action": "unlock"}).status_code == 403
+    assert client.post("/api/actions", json={"action": "exit"}).status_code == 200
     for path in ("events", "auth/users", "auth/events"):
         assert client.get(f"/api/{path}").status_code == 403
     assert client.post("/api/simulation/power/config", json={}).status_code == 403
@@ -97,7 +98,7 @@ def test_user_permissions_and_immediate_revocation(accounts):
     assert client.patch(f"/api/auth/users/{person['id']}",
                         json={"role": "user", "active": False}).status_code == 200
     events = client.get("/api/events").json()["items"]
-    assert any(e["type"] == "unlock" and e["actor"] == "pessoa" for e in events)
+    assert any(e["type"] == "exit" and e["actor"] == "pessoa" for e in events)
     client.cookies.clear()
     client.cookies.set("everlock_session", user_token)
     assert client.post("/api/actions", json={"action": "unlock"}).status_code == 401
@@ -158,27 +159,19 @@ def test_duplicate_account_and_invalid_roles_are_rejected(accounts):
                         json={"role": "user", "active": True}).status_code == 404
 
 
-def test_ups_reading_is_separate_from_virtual_power_and_clock(accounts):
-    from datetime import UTC, datetime
-
-    from everlock.ups import UPSObservation
-
-    client, real, app = accounts
+def test_external_ups_never_reports_simulated_battery_as_real(accounts):
+    client, real, _ = accounts
     prepare(client)
-    assert client.get("/api/ups").json()["observation"] is None
-    app.state.ups.receive(UPSObservation(
-        observed_at=datetime.fromtimestamp(real[0], UTC), battery_percent=77,
-        external_power=True,
-    ))
+    before = client.get("/api/ups").json()
+    assert before["observation"] is None
+    assert before["status"] == "not_monitored"
+    assert before["source"] == "external_equipment"
+    assert before["controls_available"] is False
     client.post("/api/simulation/clock", json={"paused": True})
     client.post("/api/simulation/power", json={"mains_available": False})
     client.post("/api/simulation/clock", json={"advance_seconds": 86400})
-    state = client.get("/api/ups").json()
-    assert state["status"] == "available"
-    assert state["observation"]["battery_percent"] == 77
-    assert state["observation"]["external_power"] is True
     real[0] += 15
-    assert client.get("/api/ups").json()["status"] == "stale"
+    assert client.get("/api/ups").json() == before
 
 
 def test_accounts_and_revocations_survive_restart(tmp_path):

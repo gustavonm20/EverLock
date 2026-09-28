@@ -3,6 +3,7 @@ from collections.abc import Callable
 from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from threading import RLock
+from uuid import uuid4
 
 from everlock import __version__
 from everlock.domain import Action, Denied, Door, Event, apply_action
@@ -17,6 +18,7 @@ class Controller:
         self.clock = clock
         self.mutex = RLock()
         self.actor = None
+        self.door_version = str(uuid4())
         self.door = storage.load()
         self.power, self.timeline = storage.load_simulation()
         self._last_real = clock()
@@ -31,15 +33,21 @@ class Controller:
     def _copy(self) -> tuple[Door, Power, Timeline]:
         return replace(self.door), replace(self.power), replace(self.timeline)
 
-    def _commit(self, door: Door, power: Power, timeline: Timeline, events: list[Event]):
+    def _commit(self, door: Door, power: Power, timeline: Timeline, events: list[Event],
+                command_result=None):
+        door_changed = (door.position, door.release_deadline) != (
+            self.door.position, self.door.release_deadline,
+        )
         door.revision = self.door.revision + 1
         door.updated_at = datetime.now(UTC).isoformat()
         stamped = [replace(e, simulated_at=timeline.elapsed_seconds)
                    if e.simulated_at is None else e for e in events]
         stamped = [replace(e, actor=self.actor) if e.source != "system" else e for e in stamped]
         # Porta, bateria, relógio e eventos são publicados só depois da transação.
-        self.storage.save(door, stamped, power, timeline)
+        self.storage.save(door, stamped, power, timeline, command_result)
         self.door, self.power, self.timeline = door, power, timeline
+        if door_changed:
+            self.door_version = str(uuid4())
         self._checkpoint_real = self._last_real
         self._checkpoint_sim = timeline.elapsed_seconds
 
@@ -82,6 +90,7 @@ class Controller:
         return {
             "mode": "simulation", "version": __version__,
             "door": {
+                "version": self.door_version,
                 "position": self.door.position, "lock": self.door.lock,
                 "release_remaining_seconds": round(remaining, 2),
                 "secured": self.door.secured,
@@ -94,7 +103,7 @@ class Controller:
             },
             "power": power, "simulation": asdict(self.timeline),
             "capabilities": {
-                "door": True, "power": True, "connectivity": False,
+                "door": True, "power": True, "connectivity": True,
                 "face_recognition": False, "authentication": True,
             },
             "revision": self.door.revision, "updated_at": self.door.updated_at,
@@ -133,6 +142,43 @@ class Controller:
                 return self._denied(error)
             self._commit(door, power, timeline, [event])
             return self._success(event.detail)
+
+    def remote_action(self, command, expired: Callable[[], bool], now: float) -> None:
+        """Grava a decisão remota na mesma transação da porta e de seu evento."""
+        with self.mutex:
+            self._sync()
+            door, power, timeline = self._copy()
+            try:
+                if expired():
+                    raise Denied("command_expired", "O prazo terminou antes da execução.")
+                if command["expected_version"] != self.door_version:
+                    raise Denied(
+                        "state_conflict", "A porta mudou. Confira a leitura e tente novamente.",
+                    )
+                if not power.device_on:
+                    raise Denied("device_unavailable", "O dispositivo virtual está indisponível.")
+                if door.position != "closed":
+                    raise Denied("door_open", "Feche a porta localmente antes de operar a trava.")
+                if command["action"] == "lock" and door.release_deadline is None:
+                    event = Event("lock_confirmed", "Trava já engatada",
+                                  "Porta virtual fechada e trava engatada.", "remote")
+                else:
+                    action = "unlock" if command["action"] == "unlock" else "end_release"
+                    event = replace(apply_action(door, action, timeline.elapsed_seconds),
+                                    source="remote")
+                status, code, message = "executed", "executed", event.detail
+            except Denied as error:
+                status = "expired" if error.code == "command_expired" else "failed"
+                code, message = error.code, error.message
+                event = Event("command_denied", "Comando remoto recusado", message,
+                              "remote", "denied")
+            self._commit(door, power, timeline, [event],
+                         (command["id"], status, code, message, now))
+
+    def record(self, event: Event) -> None:
+        with self.mutex:
+            self._sync()
+            self._commit(*self._copy(), [event])
 
     def set_power(self, available: bool) -> tuple[int, dict]:
         with self.mutex:

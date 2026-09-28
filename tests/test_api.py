@@ -24,7 +24,7 @@ def test_health_status_and_assets(client):
     status = client.get("/api/status").json()
     assert status["door"]["secured"]
     assert status["capabilities"] == {
-        "door": True, "power": True, "connectivity": False,
+        "door": True, "power": True, "connectivity": True,
         "face_recognition": False, "authentication": True,
     }
     page = client.get("/")

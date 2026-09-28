@@ -5,6 +5,8 @@ import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
+from uuid import UUID
 
 from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
@@ -15,13 +17,13 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from everlock import __version__
 from everlock.accounts import Accounts
-from everlock.auth_api import authorized
+from everlock.auth_api import COOKIE, authorized
 from everlock.auth_api import router as auth_router
+from everlock.communication import Communication
 from everlock.controller import Controller
 from everlock.domain import Action
 from everlock.energy import PowerConfig
 from everlock.storage import Storage
-from everlock.ups import UPSMonitor
 
 WEB_DIR = Path(__file__).parent / "web"
 PROJECT_DIR = Path(__file__).resolve().parents[2]
@@ -31,6 +33,21 @@ logger = logging.getLogger("everlock")
 class ActionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     action: Action
+
+
+class CommandRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    command_id: UUID
+    action: Literal["unlock", "lock"]
+    expected_version: UUID
+    valid_for_seconds: int = Field(default=10, ge=1, le=30, strict=True)
+
+
+class NetworkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    internet_available: bool = Field(strict=True)
+    lan_available: bool = Field(strict=True)
+    delay_seconds: float = Field(default=0, ge=0, le=30, strict=True)
 
 
 class PowerRequest(BaseModel):
@@ -73,6 +90,7 @@ class PowerSetup(BaseModel):
 def create_app(
     db_path: Path | None = None, clock: Callable[[], float] = time.monotonic,
     session_clock: Callable[[], float] = time.time,
+    command_clock: Callable[[], float] = time.monotonic,
 ) -> FastAPI:
     if db_path is None:
         data_dir = Path(os.getenv("EVERLOCK_DATA_DIR", str(PROJECT_DIR / "data"))).resolve()
@@ -85,13 +103,15 @@ def create_app(
             app.state.controller = Controller(storage, clock)
             app.state.accounts = Accounts(storage.connection, app.state.controller.mutex,
                                           session_clock)
-            app.state.ups = UPSMonitor(clock=session_clock)
+            app.state.communication = Communication(
+                app.state.controller, app.state.accounts, command_clock, session_clock,
+            )
             stop = asyncio.Event()
 
             async def maintain_simulation():
                 while not stop.is_set():
                     try:
-                        await asyncio.to_thread(app.state.controller.tick)
+                        await asyncio.to_thread(app.state.communication.tick)
                     except Exception:
                         logger.exception(
                             "Falha ao atualizar o simulador; uma nova tentativa será feita."
@@ -169,24 +189,54 @@ def create_app(
     @app.get("/api/ups")
     def real_ups(request: Request):
         with authorized(request):
-            return request.app.state.ups.snapshot()
+            return {
+                "source": "external_equipment", "status": "not_monitored",
+                "observation": None, "controls_available": False,
+                "message": "O nobreak alimenta o computador. Não há monitoramento pelo EverLock.",
+            }
 
     @app.post("/api/actions")
     def action(payload: ActionRequest, request: Request):
-        with authorized(request, admin=payload.action == "key_entry"):
+        with authorized(request, admin=payload.action in {"key_entry", "unlock"}):
             code, body = request.app.state.controller.action(payload.action)
         return JSONResponse(body, status_code=code)
+
+    @app.get("/api/communication")
+    def communication(request: Request):
+        with authorized(request) as user:
+            return request.app.state.communication.snapshot(user)
+
+    @app.post("/api/commands")
+    def command(payload: CommandRequest, request: Request):
+        with authorized(request) as user:
+            code, body = request.app.state.communication.submit(
+                payload, user, request.cookies[COOKIE],
+            )
+        return JSONResponse(body, status_code=code)
+
+    @app.get("/api/commands/{command_id}")
+    def command_result(command_id: UUID, request: Request):
+        with authorized(request) as user:
+            return request.app.state.communication.get(str(command_id), user)
+
+    @app.post("/api/simulation/network")
+    def configure_network(payload: NetworkRequest, request: Request):
+        with authorized(request, admin=True) as user:
+            request.app.state.communication.configure(payload)
+            return request.app.state.communication.snapshot(user)
 
     @app.post("/api/simulation/power")
     def power(payload: PowerRequest, request: Request):
         with authorized(request, admin=True):
             code, body = request.app.state.controller.set_power(payload.mains_available)
+            request.app.state.communication.tick()
         return JSONResponse(body, status_code=code)
 
     @app.post("/api/simulation/clock")
     def clock_control(payload: ClockRequest, request: Request):
         with authorized(request, admin=True):
             code, body = request.app.state.controller.control_clock(**payload.model_dump())
+            request.app.state.communication.tick()
         return JSONResponse(body, status_code=code)
 
     @app.post("/api/simulation/power/config")
@@ -196,6 +246,7 @@ def create_app(
             code, body = request.app.state.controller.configure_power(
                 config, payload.initial_percent,
             )
+            request.app.state.communication.tick()
         return JSONResponse(body, status_code=code)
 
     @app.get("/", include_in_schema=False)
