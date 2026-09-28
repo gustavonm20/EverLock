@@ -14,16 +14,18 @@
   }
 
   function renderAuth() {
-    const creating = setup || registering;
-    byId("auth-title").textContent = setup ? "Prepare seu EverLock" : registering ? "Crie sua conta" : "Entre no EverLock";
-    byId("auth-description").textContent = setup ? "Crie o primeiro administrador deste computador. Não há senha padrão." : registering ? "Faça seu cadastro. Um administrador precisa aprová-lo antes do primeiro acesso." : "Use sua conta local para acessar o laboratório.";
-    byId("auth-submit").textContent = setup ? "Criar administrador" : registering ? "Solicitar cadastro" : "Entrar";
+    const creating = registering;
+    byId("auth-title").textContent = registering ? "Crie sua conta" : "Entre no EverLock";
+    byId("auth-description").textContent = registering
+      ? setup ? "Cadastre a primeira conta para administrar este EverLock." : "Faça seu cadastro. Um administrador precisa aprová-lo antes do primeiro acesso."
+      : "Entre com seu usuário e senha. Se ainda não tem uma conta, faça seu cadastro.";
+    byId("auth-submit").textContent = registering ? setup ? "Criar conta de administrador" : "Solicitar cadastro" : "Entrar";
     byId("login-password").autocomplete = creating ? "new-password" : "current-password";
     byId("password-rules").hidden = !creating;
     byId("confirm-password-label").hidden = !creating;
     byId("confirm-password").disabled = !creating;
     byId("confirm-password").required = creating;
-    byId("auth-mode").hidden = setup;
+    byId("auth-mode").hidden = false;
     byId("auth-mode").textContent = registering ? "Já tenho conta. Entrar" : "Não tem conta? Criar conta";
     byId("login-password").setCustomValidity("");
     byId("confirm-password").setCustomValidity("");
@@ -60,7 +62,7 @@
     byId("main").hidden = !user;
     byId("logout").hidden = !user;
     byId("session-label").textContent = user ? `${user.username} · ${user.role === "admin" ? "Administrador" : "Usuário"}` : "";
-    if (user || setup) registering = false;
+    if (user) registering = false;
     renderAuth();
     document.dispatchEvent(new Event("everlock-session"));
   }
@@ -109,20 +111,24 @@
 
   byId("login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    checkPassword(byId("login-password"), setup || registering);
+    checkPassword(byId("login-password"), registering);
     const confirmation = byId("confirm-password");
-    confirmation.setCustomValidity((setup || registering) && confirmation.value !== byId("login-password").value ? "A confirmação da senha não confere." : "");
+    confirmation.setCustomValidity(registering && confirmation.value !== byId("login-password").value ? "A confirmação da senha não confere." : "");
     if (!event.target.reportValidity()) return;
     const button = byId("auth-submit"); button.disabled = true;
     const data = Object.fromEntries(new FormData(event.target));
     try {
+      if (setup && !registering) {
+        byId("auth-message").textContent = "Ainda não há uma conta neste EverLock. Use “Criar conta” para fazer o primeiro cadastro.";
+        return;
+      }
       if (registering && !setup) {
         const result = await api("register", "POST", data);
         event.target.reset(); registering = false; renderAuth(); byId("auth-message").textContent = result.message;
         return;
       }
       delete data.confirm_password;
-      if (setup) await api("setup", "POST", data);
+      if (registering && setup) await api("setup", "POST", data);
       await api("login", "POST", data);
       event.target.reset(); byId("auth-message").textContent = ""; await refresh();
     } catch (error) { byId("auth-message").textContent = error.message; }
@@ -132,7 +138,7 @@
     registering = !registering; byId("login-form").reset(); byId("auth-message").textContent = ""; renderAuth();
   });
   byId("login-password").addEventListener("input", () => {
-    checkPassword(byId("login-password"), setup || registering); byId("confirm-password").setCustomValidity("");
+    checkPassword(byId("login-password"), registering); byId("confirm-password").setCustomValidity("");
   });
   byId("confirm-password").addEventListener("input", () => byId("confirm-password").setCustomValidity(""));
   document.querySelectorAll("[data-new-password]").forEach((input) => {
