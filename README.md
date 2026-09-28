@@ -1,5 +1,4 @@
 # EverLock
-
 [![CI](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml)
 
 Simulador de controle de acesso desenvolvido em Python. Permite operar uma porta virtual, testar quedas de energia e consultar o histórico de eventos salvo em SQLite.
@@ -7,7 +6,6 @@ Simulador de controle de acesso desenvolvido em Python. Permite operar uma porta
 Tudo relacionado à porta, à trava e à chave é virtual. O grupo decidiu comprar um **nobreak pronto para alimentar o computador**; esse é o único equipamento físico adicional previsto. A integração de suas leituras depende do modelo escolhido. Não há integração com fechaduras físicas.
 
 ## Começar no Windows
-
 É necessário ter **Python 3.13 ou superior** instalado e disponível no computador. A primeira instalação também precisa de internet para baixar as dependências.
 
 1. Abra a pasta do projeto.
@@ -128,3 +126,5 @@ Os testes cobrem porta, energia, relógio, migração, recuperação, autentica�
 O [planejamento no Notion](https://app.notion.com/p/3e7e2dde06ab81f68b2ece96ce4a61a2) reúne etapas, dependências, critérios e um Kanban. O GitHub concentra [issues](https://github.com/gustavonm20/EverLock/issues), revisão de código, testes e o [roadmap](https://github.com/users/gustavonm20/projects/3). Os quadros são atualizados por entrega; ainda não há sincronização automática.
 
 Consulte [CONTRIBUTING.md](CONTRIBUTING.md) antes de alterar o código e [SECURITY.md](SECURITY.md) para relatos de segurança. Este repositório não distribui imagens faciais, bancos locais ou credenciais.
+
+.
