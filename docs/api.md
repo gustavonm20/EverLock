@@ -1,8 +1,8 @@
 # API local do simulador
 
-Base: `http://127.0.0.1:8000`. Porta e energia de laboratório são simuladas. `/api/ups` é um contrato separado para futuras leituras reais, ainda sem driver. Execute apenas um processo do servidor. O contrato estruturado está em `/openapi.json`; esta versão dispensa páginas de documentação que carreguem recursos externos.
+Base: `http://127.0.0.1:8000`. Porta e energia de laboratório são simuladas. `/api/ups` informa que o nobreak é externo e não monitorado. Execute apenas um processo do servidor. O contrato estruturado está em `/openapi.json`; esta versão dispensa páginas de documentação que carreguem recursos externos.
 
-Salvo `/api/health` e as rotas públicas de preparação/cadastro/login/sessão, as consultas exigem cookie de sessão. Histórico e controles `/api/simulation/*` exigem administrador. Na rota de ações, `key_entry` é administrativa; as demais ações estão disponíveis a contas ativas. Falta de sessão retorna 401, falta de permissão retorna 403. Veja os endpoints de autenticação em [accounts.md](accounts.md).
+Salvo `/api/health` e as rotas públicas de preparação/cadastro/login/sessão, as consultas exigem cookie de sessão. Histórico e controles `/api/simulation/*` exigem administrador. Na rota local de ações, `key_entry` e `unlock` são testes administrativos; as demais ações estão disponíveis a contas ativas. A liberação comum usa o painel remoto; a entrada facial continua em preparação. Falta de sessão retorna 401, falta de permissão retorna 403. Veja os endpoints de autenticação em [accounts.md](accounts.md).
 
 | Método e caminho | Resposta / finalidade |
 |---|---|
@@ -10,10 +10,14 @@ Salvo `/api/health` e as rotas públicas de preparação/cadastro/login/sessão,
 | `GET /api/status` | Posição da porta, trava, prazo restante, revisão e recursos implementados |
 | `GET /api/events?limit=20` | Últimos eventos, do mais recente para o mais antigo; limite entre 1 e 100 |
 | `POST /api/actions` | Solicitação de uma ação ao controlador |
+| `GET /api/communication` | Canal, última observação, idade, indicador de leitura antiga e últimos 20 comandos visíveis |
+| `POST /api/commands` | Novo comando remoto simulado; 202 significa solicitado, sem confirmar atuação |
+| `GET /api/commands/{uuid}` | Situação e transições de um comando; 404 se inexistente ou sem acesso |
+| `POST /api/simulation/network` | Administrador configura internet, rede local e atraso simulados |
 | `POST /api/simulation/power` | Cortar/restaurar a alimentação virtual com `mains_available` booleano |
 | `POST /api/simulation/clock` | Pausar, alterar velocidade ou avançar um intervalo |
 | `POST /api/simulation/power/config` | Configurar um cenário de energia; pausa o tempo e encerra liberações |
-| `GET /api/ups` | Fonte `real_ups`, disponibilidade, idade e observação real opcional; somente leitura |
+| `GET /api/ups` | Informação de equipamento externo sem monitoramento; sem observações reais nem controles |
 
 Corpo de uma ação:
 
@@ -57,14 +61,43 @@ Exemplos de corpos, enviados separadamente:
 
 Eventos novos têm `simulated_at`, em segundos virtuais, e `actor`, com a conta responsável quando aplicável. Eventos anteriores à migração mantêm os campos novos nulos. O horário UTC registra quando o evento foi salvo; vários eventos de um avanço longo podem compartilhar esse horário, mas preservam seus instantes virtuais.
 
-Os eventos separam tipo, título, detalhe, origem (`system`, `manual` ou `lab`), resultado (`success`, `denied` ou `info`) e data. As rotas atuais operam um laboratório local; ainda não são o protocolo futuro de comandos remotos autenticados, com identificador, expiração e confirmação por dispositivo.
+Os eventos separam tipo, título, detalhe, origem (`system`, `manual`, `lab` ou `remote`), resultado (`success`, `denied` ou `info`) e data. `/api/actions` representa os controles locais do laboratório. `/api/commands` implementa o canal remoto simulado, mantendo a decisão final no controlador.
 
 O navegador não repete automaticamente uma ação se a resposta se perder. Ele consulta o estado novamente. A liberação repetida enquanto há uma ativa é recusada, sem ampliar o prazo. A liberação não é restaurada quando o processo reinicia.
 
 As proteções de origem e endereço local complementam a sessão; não substituem autorização. Pessoas ou programas com acesso aos arquivos do computador continuam fora da proteção fornecida pelo login. Não exponha esta implantação HTTP local à internet.
 
+## Comandos e observações remotas
+
+Exemplo de POST em `/api/commands` (gere um UUID novo e use a versão da observação recebida):
+
+```json
+{
+  "command_id": "0f378e2a-f8f5-4bdc-a6e3-e64f365635a8",
+  "action": "unlock",
+  "expected_version": "10a093b7-56a3-4baa-a3e3-963b1b5ed135",
+  "valid_for_seconds": 10
+}
+```
+
+`action` aceita `unlock` e `lock`; prazo inteiro de 1 a 30 segundos reais. `door.version` é um UUID de controle de conflito; não equivale à revisão geral que também muda com a bateria. Uma conta ativa pode enviar e consultar seus comandos; administrador vê todos. Nenhum comando remoto impede saída interna.
+
+A resposta traz `duplicate` e `command`, com `id`, `action`, `actor`, `status`, `code`, `message`, `requested_at`, `expires_at`, `finished_at`, `valid_for_seconds` e `transitions`. Datas são segundos UTC desde a época Unix. Cada transição tem `status` e `occurred_at`; o resultado público nunca inclui hash da sessão.
+
+Estados: `requested` → `accepted` → `executed`, com saídas `failed` ou `expired`. Uma duplicata idêntica retorna 200 com o mesmo resultado; conteúdo conflitante retorna 409. Comando enviado sem canal é registrado como falho e retorna 409. Limites de envio retornam 429. Falhas posteriores são consultadas pelo GET, com códigos como `state_conflict`, `authorization_revoked`, `command_expired` e `restart_interrupted`.
+
+Exemplo de cenário administrativo:
+
+```json
+{"internet_available": false, "lan_available": true, "delay_seconds": 15}
+```
+
+Flags devem ser booleanos; atraso finito entre 0 e 30 segundos reais. O atraso é aplicado aos novos comandos, sem deslocar prazos dos existentes. Interromper canal cancela pendentes imediatamente; não há retomada na reconexão.
+
+`/api/communication` retorna `mode`, as duas flags, `device_available`, `delay_seconds`, `channel_available`, `reason`, `observation`, `observation_stale`, `observation_age_seconds` e `commands`. A observação contém `door`, `device` e `observed_at` ISO UTC; antes da primeira leitura pode ser nula. Durante falhas, preserva a última observação com indicação explícita de que não confirma o estado atual. Veja [regras e cenários](communication.md).
+
 ## Nobreak real
 
-Sem driver configurado, `/api/ups` retorna `source: "real_ups"`, `status: "not_configured"`, `observation: null` e `controls_available: false`. Uma futura observação pode informar `observed_at`, `model`, `external_power`, `battery_percent` e `runtime_seconds`; valores desconhecidos ficam nulos. A API nunca usa a bateria virtual para preencher esses campos.
+`/api/ups` retorna `source: "external_equipment"`, `status: "not_monitored"`, `observation: null` e `controls_available: false`. O equipamento alimenta o computador e não será integrado ao software. A API nunca usa a bateria virtual para preencher leituras reais.
 
-Leituras ficam `stale` após 15 segundos reais. `unavailable` indica falha de leitura, não prova falta de energia. Uma última observação pode ser mantida com sua idade, sem ser apresentada como atual. Não existe endpoint para enviar comandos ao nobreak nem para cadastrar medições reais pelo navegador.
+Não há coleta USB, driver nem endpoint para enviar comandos ao nobreak. O status deve ser consultado no próprio equipamento. A compatibilidade elétrica e a duração de backup serão verificadas com o computador real, fora da simulação.
