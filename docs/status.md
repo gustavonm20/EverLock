@@ -130,6 +130,8 @@ A suíte completa passou com **149 testes** (33 novos) e o Ruff passou. A interf
 
 Validação final desta retomada: **271 testes aprovados** em uma execução completa sobre a cópia destinada à publicação, Ruff aprovado e sintaxe dos scripts da interface verificada. Os testes incluem a CLI sem sobrescrever relatórios, medições de latência com relógio controlado e regressões de cancelamento/expiração. Nove cenários de câmera/API simuladas conferiram cancelamento nas duas interfaces; não foi um ensaio visual com câmera real. Permanece somente o aviso do cliente HTTP de testes já acompanhado na [issue #13](https://github.com/gustavonm20/EverLock/issues/13).
 
+A primeira execução no GitHub revelou uma disputa do relógio falso no teste de dois comandos: o avanço podia ocorrer entre as leituras da tarefa de fundo. O teste agora avança o relógio e processa o lote sob a mesma trava, sem alterar o protocolo ou a aplicação. A regressão foi validada de forma focada antes de reenviar o PR.
+
 ## Pendências de aceite e validação
 
 - Consentimento dado pela própria pessoa (hoje o administrador o registra).

@@ -119,18 +119,24 @@ def test_reject_offline_submission_and_remote_lock_does_not_close_door(channel):
 
 
 def test_conflicting_commands_use_door_version_not_energy_revision(channel):
-    client, mono, _, _ = channel
+    client, mono, _, app = channel
     network(client, delay=2)
     unlock, lock = command(client), command(client, "lock")
     client.post("/api/commands", json=unlock)
     client.post("/api/commands", json=lock)
     client.post("/api/simulation/power", json={"mains_available": False})
-    mono[0] += 2
+    # O relógio falso não pode mudar entre as leituras de um tick em segundo plano.
+    # Os dois comandos devem ficar prontos no mesmo instante deste cenário.
+    with app.state.controller.mutex:
+        mono[0] += 2
+        app.state.communication.tick()
     assert result(client, unlock)["status"] == "executed"
     assert result(client, lock)["code"] == "state_conflict"
     fresh_lock = command(client, "lock")
     client.post("/api/commands", json=fresh_lock)
-    mono[0] += 2
+    with app.state.controller.mutex:
+        mono[0] += 2
+        app.state.communication.tick()
     assert result(client, fresh_lock)["status"] == "executed"
     assert client.get("/api/status").json()["door"]["secured"]
     assert client.post("/api/actions", json={"action": "exit"}).status_code == 200
