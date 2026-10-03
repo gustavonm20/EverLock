@@ -163,7 +163,7 @@
     const remaining = Math.max(0, Number(door.release_remaining_seconds) || 0);
     const remainingLabel = `${remaining.toFixed(1).replace(".", ",")} s`;
 
-    elements.version.textContent = state.version || "0.4.0";
+    elements.version.textContent = state.version || "0.13.0";
     elements["door-position"].textContent = isOpen ? "Aberta" : "Fechada";
     elements["door-hint"].textContent = isOpen ? "Feche para concluir o acesso" : "Posição confirmada no simulador";
     elements["lock-position"].textContent = released ? "Liberada" : pending ? "Aguardando" : "Engatada";
@@ -252,10 +252,12 @@
     elements.events.replaceChildren(fragment);
   }
 
+  document.addEventListener("everlock-history-filter", () => { historyLoaded = false; updateEvents(); });
+
   async function updateEvents() {
     if (document.body.dataset.role !== "admin") return;
     try {
-      const { response, body } = await request("/api/events?limit=20");
+      const { response, body } = await request(`/api/events?limit=20${elements.events.dataset.query || ""}`);
       if (!response.ok || !Array.isArray(body.items)) throw new Error("Events unavailable");
       const signature = JSON.stringify(body.items);
       if (!historyLoaded || signature !== lastEventSignature) {
@@ -263,7 +265,8 @@
         lastEventSignature = signature;
       }
       historyLoaded = true;
-      elements["event-count"].textContent = body.items.length === 1 ? "1 evento recente" : `${body.items.length} eventos recentes`;
+      const filtered = Boolean(elements.events.dataset.query);
+      elements["event-count"].textContent = body.items.length === 1 ? (filtered ? "1 evento filtrado" : "1 evento recente") : `${body.items.length} ${filtered ? "eventos filtrados" : "eventos recentes"}`;
     } catch {
       elements["event-count"].textContent = "Histórico indisponível";
       if (!historyLoaded) {

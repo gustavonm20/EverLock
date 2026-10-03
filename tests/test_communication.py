@@ -5,13 +5,14 @@ from fastapi.testclient import TestClient
 
 from everlock.app import create_app
 
-ADMIN = {"username": "admin", "password": "Senha de testes1!"}
+ADMIN = {"username": "admin", "email": "admin@example.com", "password": "Senha de testes1!"}
 
 
 def sign_in(client):
     if client.get("/api/auth/session").json()["setup_required"]:
         assert client.post("/api/auth/setup", json=ADMIN).status_code == 201
-    assert client.post("/api/auth/login", json=ADMIN).status_code == 200
+    login = {"identifier": "admin", "password": ADMIN["password"]}
+    assert client.post("/api/auth/login", json=login).status_code == 200
 
 
 @pytest.fixture
@@ -168,11 +169,12 @@ def test_logout_invalidates_command_waiting_for_delivery(channel):
 def test_permissions_visibility_and_revocation_at_execution(channel):
     client, mono, _, _ = channel
     network(client, delay=2)
-    client.post("/api/auth/users", json={"username": "pessoa", "password": ADMIN["password"]})
+    client.post("/api/auth/users", json={"username": "pessoa", "email": "pessoa@example.com",
+                                         "password": ADMIN["password"]})
     admin_token = client.cookies.get("everlock_session")
     admin_command = command(client, "lock")
     client.post("/api/commands", json=admin_command)
-    client.post("/api/auth/login", json={"username": "pessoa", "password": ADMIN["password"]})
+    client.post("/api/auth/login", json={"identifier": "pessoa", "password": ADMIN["password"]})
     assert network(client).status_code == 403
     assert client.get(f"/api/commands/{admin_command['command_id']}").status_code == 404
     assert client.get("/api/communication").json()["commands"] == []

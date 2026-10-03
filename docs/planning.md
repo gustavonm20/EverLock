@@ -17,16 +17,16 @@ O [espaço central no Notion](https://app.notion.com/p/EverLock-3e8e2dde06ab809c
 | 3 | Relógio e energia virtual | Concluído | P0 | 2 | Consumo, recarga, perdas, pulso de atuação e transições reproduzíveis; banco antigo migra sem perder dados |
 | 4 | Tema claro/escuro | Concluído | P1 | 1 | Botão sol/lua acessível; preferência sobrevive ao recarregamento; celular e computador legíveis |
 | 5 | Login e sessão local | Concluído | P0 | 3 | Primeiro administrador sem senha padrão; hash de senha; sessão expira no tempo real; logout revoga sessão |
-| 6 | Usuários e permissões | Concluído | P0 | 5 | Cadastro público aguarda aprovação; API aplica papéis; último admin é preservado; revogação imediata |
+| 6 | Usuários e permissões | Concluído | P0 | 5 | Cadastro público exige e-mail confirmado; administrador por convite; API aplica papéis; último admin é preservado; revogação imediata |
 | 7 | Histórico administrativo | Concluído | P0 | 6 | Login, mudanças e revogações têm autoria; senhas e tokens nunca aparecem nos registros |
 | 8 | Protocolo de comandos | Concluído | P0 | 6 | Identificador, prazo, duplicatas, confirmação e conflito tratados no backend |
 | 9 | Internet, rede e dispositivo | Concluído | P0 | 8 | Falhas independentes; leitura antiga identificada; comando vencido não executa ao reconectar |
-| 10 | Consentimento e cadastro facial | Backlog | P0 | 6 | Identidade biométrica separada da conta; consentimento, exclusão e retenção definidos |
-| 11 | Reconhecimento de imagens | Backlog | P0 | 10 | Detector, alinhamento e embeddings locais; resultados preparados separados; autorização verificada |
-| 12 | Avaliação facial | Backlog | P1 | 11 | Imagens autorizadas de teste diferentes do cadastro; erros e limitações documentados |
-| 13 | Testes integrados e cenários | Backlog | P0 | 9, 12 | Face, acesso, revogação, falhas e recuperação demonstrados sem alterar código |
-| 14 | Manual e apresentação | Backlog | P0 | 13 | Outra pessoa reproduz a demonstração a partir do manual |
-| 15 | n8n opcional | Backlog | P2 | 13 | Só alertas/relatórios; sem poder de autorização; falha não afeta o sistema |
+| 10 | Consentimento e cadastro facial | Em revisão (simulado e real; aceite pessoal pendente) | P0 | 6 | Identidade biométrica separada da conta; consentimento, exclusão e retenção definidos |
+| 11 | Reconhecimento de imagens | Em revisão (implementado; calibração pendente) | P0 | 10 | Detector, alinhamento e embeddings locais; resultados preparados separados; autorização verificada |
+| 12 | Avaliação facial | Em andamento (ferramenta pronta; imagens pendentes) | P1 | 11 | Imagens autorizadas de teste diferentes do cadastro; erros e limitações documentados |
+| 13 | Testes integrados e cenários | Em revisão (cenários automatizados; validação real pendente) | P0 | 9, 12 | Face, acesso, revogação, falhas e recuperação demonstrados sem alterar código |
+| 14 | Manual e apresentação | Em revisão (roteiro pronto) | P0 | 13 | Outra pessoa reproduz a demonstração a partir do manual |
+| 15 | n8n opcional | Em revisão (alertas prontos; relatórios pendentes) | P2 | 13 | Só alertas/relatórios; sem poder de autorização; falha não afeta o sistema |
 | Paralela | Monitoramento do nobreak por software | Fora do escopo | — | Decisão de 28/09/2026 | Não instalar driver nem apresentar a bateria virtual como leitura física |
 | Paralela | Validar alimentação pelo nobreak | Backlog | P0 | Equipamento e computador disponíveis | Registrar continuidade real e retorno de energia; sem integração ao aplicativo |
 
@@ -55,7 +55,7 @@ As evidências do incremento completo, incluindo contas e cadastro, estão em [s
 6. Registrar ações administrativas sem dados secretos.
 7. Construir telas de entrada e administração, respeitando tema e tamanho de tela.
 8. Testar acesso anônimo, usuário comum, administrador, expiração, revogação e origem da solicitação.
-9. Oferecer cadastro com aprovação e senha de pelo menos 6 caracteres, maiúscula, minúscula, número e símbolo, sem máximo.
+9. Oferecer cadastro com confirmação de e-mail, administrador por convite e senha de pelo menos 6 caracteres, maiúscula, minúscula, número e símbolo, sem máximo.
 
 ## Comunicação implementada no incremento 0.4
 
@@ -66,7 +66,31 @@ As evidências do incremento completo, incluindo contas e cadastro, estão em [s
 - [x] Acrescentar painel remoto e cenários administrativos de atraso e interrupção.
 - [x] Verificar as regras por testes e documentar a demonstração em [communication.md](communication.md).
 
-A continuação foi autorizada após a entrega de cadastro, senha e proteção do GitHub. O próximo incremento é consentimento e cadastro facial. Em 28/09/2026, o grupo definiu que o nobreak alimentará o computador sem integração ao aplicativo; veja [ups.md](ups.md).
+A continuação foi autorizada após a entrega de cadastro, senha e proteção do GitHub. Os incrementos 0.5 a 0.12 entregaram identidades, pipeline facial local, cifra e desafio de movimento. A etapa atual prepara a avaliação com imagens distintas e os cenários integrados. Em 28/09/2026, o grupo definiu que o nobreak alimentará o computador sem integração ao aplicativo; veja [ups.md](ups.md).
+
+## Identidades implementadas no incremento 0.5
+
+- [x] Separar identidades das contas, com apelido/código e ativação.
+- [x] Registrar consentimento versionado, revogação com apagamento e exclusão completa.
+- [x] Aplicar retenção com exclusão automática e janela de horário local.
+- [x] Testar reconhecimento simulado, com autorização consultada antes da liberação.
+- [x] Manter auditoria sem apelidos e sem qualquer dado biométrico armazenado.
+- [x] Base do reconhecimento facial com OpenCV e vetores cifrados (incremento 0.6).
+- [x] Exigir desafio de giro antes da liberação facial da porta (incremento 0.12).
+- [ ] Calibrar similaridade e giro com imagens autorizadas (etapa 12).
+
+Documentação e critérios em [identities.md](identities.md).
+
+## Avaliação e cenários do incremento 0.13
+
+- [x] Preparar avaliação local 1:N com cadastro e testes separados e consentimento explícito no manifesto.
+- [x] Separar falhas de captura, falsa aceitação, rejeição e falsa identificação; registrar latência e limites usados.
+- [x] Preparar cenários integrados de face, revogação, energia, acesso manual e reinício.
+- [ ] Executar a avaliação com imagens autorizadas do grupo e registrar o relatório.
+- [ ] Conferir movimento e direção com a câmera usada na apresentação.
+- [ ] Ensaiar o roteiro com outra pessoa e registrar evidência.
+
+Guias: [avaliação facial](avaliacao-facial.md), [cenários integrados](cenarios-integrados.md) e [relatório técnico](relatorio-tecnico.md). A ferramenta não ajusta o sistema nem afirma que os limites já foram calibrados.
 
 ## Rotina da equipe
 

@@ -53,3 +53,7 @@ O hash da sessão fica restrito ao banco, nunca aparece no payload público. Usu
 9. Para testar reinício, envie com atraso de 30 segundos e pare/reabra o servidor antes da entrega. Faça login novamente; o histórico deve informar interrupção pelo reinício.
 
 Esses resultados comprovam as regras do simulador. Reconhecimento facial, transporte entre máquinas e medições do nobreak exigem etapas próprias.
+
+## Liberar trava remoto x reconhecimento facial
+
+O comando remoto **Liberar trava** continua sendo um comando de quem está com a sessão aberta, com prazo, confirmação e histórico. Ele **não** exige reconhecimento facial: quem comanda de longe não está na frente da câmera, e a pessoa já foi autenticada pelo login. A liberação por rosto é a de quem está no local, em **Simulador > Reconhecimento facial**. Veja a decisão 20 em [decisions.md](decisions.md).

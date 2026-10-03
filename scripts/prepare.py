@@ -9,6 +9,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def ensure_models() -> None:
+    """Baixa os modelos do reconhecimento facial na primeira vez. Falhar não impede o app."""
+    script = ROOT / "scripts" / "baixar_modelos.py"
+    try:
+        failed = subprocess.run([sys.executable, str(script), "--silencioso"], cwd=ROOT,
+                                check=False).returncode != 0
+    except OSError:
+        failed = True
+    if failed:
+        print("Aviso: os modelos do reconhecimento facial não foram baixados (veja acima). O "
+              "restante do EverLock funciona; para tentar de novo, rode\n"
+              "  .venv\\Scripts\\python scripts\\baixar_modelos.py", flush=True)
+
+
 def main() -> None:
     if sys.prefix == sys.base_prefix:
         raise SystemExit("Execute este preparador com o Python da pasta .venv.")
@@ -18,6 +32,7 @@ def main() -> None:
     ).hexdigest()
     marker = Path(sys.prefix) / ".everlock-ready"
     if marker.exists() and marker.read_text() == fingerprint:
+        ensure_models()
         return
     if importlib.util.find_spec("pip") is None:
         subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=True)
@@ -32,6 +47,7 @@ def main() -> None:
         cwd=ROOT, check=True,
     )
     marker.write_text(fingerprint)
+    ensure_models()
 
 
 if __name__ == "__main__":

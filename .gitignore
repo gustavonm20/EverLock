@@ -10,3 +10,5 @@ data/
 build/
 dist/
 *.log
+everlock.env
+backups/

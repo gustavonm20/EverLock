@@ -15,10 +15,14 @@ body:not([data-role="admin"]) [data-admin] { display: none !important; }
 .session-label { font-size: 12px; overflow-wrap: anywhere; }
 .topbar-actions { flex-wrap: wrap; }
 .account-message { margin: 14px 0; line-height: 1.6; }
-.account-section > p:not(.eyebrow), .account-section [data-admin] > p { font-size: 12px; line-height: 1.7; color: var(--muted); }
-.account-section .account-form label, .account-section .account-row, .account-section summary { font-size: 12px; }
-.account-section .password-rules { font-size: 11px; line-height: 1.6; color: var(--muted); }
-.account-section .account-history { font-size: 11px; }
+.account-section { --account-small: 11px; }
+.account-section > p:not(.eyebrow), .account-section [data-admin] > p { font-size: var(--account-small); line-height: 1.7; color: var(--muted); }
+.account-section .account-form label, .account-section .account-row, .account-section summary, .account-section .account-message { font-size: var(--account-small); }
+.account-section .account-form input, .account-section .account-form select, .account-section .account-row select { font-size: 12px; padding: 10px; }
+.account-section .account-row .button { font-size: var(--account-small); padding: 8px 12px; min-height: 0; }
+.account-section h3 { font-size: 15px; }
+.account-section .password-rules { font-size: 10px; line-height: 1.6; color: var(--muted); }
+.account-section .account-history { font-size: 10px; }
 .auth-panel .text-button { margin-right: 12px; }
 .brand { justify-content: center; }
 .brand-logo { display: block; width: 180px; height: auto; max-width: 100%; background: transparent; filter: url(#logo-light); }
@@ -38,3 +42,26 @@ body:not([data-role="admin"]) [data-admin] { display: none !important; }
 :root[data-theme="dark"] .auth-panel, :root[data-theme="dark"] .account-section { background: var(--white); color: var(--ink); }
 :root[data-theme="dark"] .account-form input, :root[data-theme="dark"] .account-form select, :root[data-theme="dark"] .account-row select { background: #202222; border-color: #484c49; color: var(--ink); }
 @media(max-width:640px) { .auth-panel { margin: 24px 16px; padding: 24px; } .account-section { padding: 20px; } .session-label { flex-basis: 100%; text-align: right; } }
+
+body[data-role="admin"] [data-user-only] { display: none !important; }
+.face-entry-test { display: grid; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.face-entry-test label { font-size: 12px; color: var(--ink); }
+.face-entry-test select { padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); font: inherit; min-width: 0; }
+.face-entry-result { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.face-entry-result[data-outcome="success"] { color: var(--green); }
+.face-entry-result[data-outcome="denied"] { color: var(--amber); }
+.invite-box { margin: 18px 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.invite-box h3 { margin-top: 0; }
+.invite-new { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0; }
+.invite-new code { padding: 10px 14px; border: 1px dashed var(--green); border-radius: 8px; font-size: 16px; letter-spacing: 2px; color: var(--ink); user-select: all; }
+.invite-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+.invite-row span { flex: 1 1 200px; }
+.face-login { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); text-align: center; }
+.face-login .button { width: 100%; }
+.face-login-or { margin: 0 0 12px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.face-login .face-video { margin: 12px auto; }
+.face-login-title { margin: 8px 0 2px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.face-login-title[data-outcome=denied] { color: var(--red); }
+.face-login-message { margin: 0 0 8px; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.account-face { margin: 18px 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.account-face h3 { margin-top: 0; }

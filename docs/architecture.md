@@ -8,6 +8,11 @@ flowchart LR
     API --> Auth["Contas e sessão\nTempo real"]
     Auth --> Controller["Controlador da simulação"]
     Auth --> Communication["Canal remoto simulado\nPrazos reais e comandos"]
+    API --> Faces["OpenCV: detecção e vetor"]
+    Faces --> Recognition["Desafio e comparação 1:N"]
+    Recognition --> Identities["Consentimento e autorização"]
+    Identities --> Controller
+    Identities <--> Vault["Vetores cifrados no SQLite"]
     Communication --> Controller
     Communication <--> Store
     Controller --> Clock["Relógio virtual único"]
@@ -52,14 +57,16 @@ A base usa uma única instância do controlador. Executar vários processos de s
 
 ## Contas e nobreak
 
-`accounts.py` cuida de senhas, sessões, papéis e auditoria. `auth_api.py` protege as ações. A mesma trava de concorrência serializa autorização, revogação e alterações da porta. Tabelas de contas são separadas de eventos e estado físico virtual; futuras identidades biométricas também terão entidades próprias. Consulte [accounts.md](accounts.md).
+`accounts.py` cuida de senhas, sessões, papéis e auditoria. `auth_api.py` protege as ações. A mesma trava de concorrência serializa autorização, revogação e alterações da porta. Tabelas de contas são separadas de eventos e estado físico virtual; as identidades biométricas têm entidades próprias (`identities.py`, `identity_api.py`, `recognition.py`) e nenhuma ligação com as contas. Consulte [accounts.md](accounts.md) e [identities.md](identities.md).
 
 O nobreak comprado alimentará o computador, sem integração ao EverLock. A seção Status Nobreak informa a ausência de monitoramento; os testes virtuais ficam recolhidos. `GET /api/ups` permanece como resposta informativa de compatibilidade, sem observações nem controles. O antigo módulo `ups.py` não é carregado pela aplicação. Consulte [ups.md](ups.md).
 
 ## Evolução prevista
 
-O próximo módulo acrescentará consentimento e cadastro de identidades biométricas. Depois, o reconhecimento produzirá uma possível identidade; o controlador continuará responsável por verificar autorização antes de liberar a porta.
+O módulo de identidades guarda consentimento, retenção e horário. `recognition.py` mantém o teste simulado separado do pipeline real: o OpenCV produz uma possível identidade somente depois de um desafio de giro, `evaluate()` decide se ela está autorizada e o controlador continua sendo o único responsável por liberar a trava. As imagens ficam apenas em memória; os vetores persistidos são cifrados.
 
 O módulo de comunicação já separa a verdade interna (`/api/status`) da última observação remota (`/api/communication`). Internet, rede local e energia têm estados próprios. UUID, prazo monotônico real, verificação de versão e revalidação da sessão protegem cada comando; a decisão final e a atuação compartilham uma transação SQLite. Falhas cancelam os pendentes, sem fila após reconexão. Consulte [communication.md](communication.md).
 
-A integração opcional com n8n receberá eventos para alertas e relatórios. Ela não participará da decisão de acesso nem será necessária ao funcionamento da porta virtual.
+A integração opcional com n8n recebe eventos para alertas em uma fila de segundo plano. Ela não participa da decisão de acesso nem é necessária ao funcionamento da porta virtual. Relatórios periódicos permanecem pendentes.
+
+`evaluation.py` e `scripts/avaliar_rostos.py` avaliam imagens autorizadas fora do aplicativo, com conjuntos separados. O relatório registra métricas e limites usados; a ferramenta não cria identidades nem altera os limites de autorização.
