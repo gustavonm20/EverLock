@@ -1,23 +1,26 @@
 import pytest
+from fakes import RecordingMailer
 from fastapi.testclient import TestClient
 
 from everlock.accounts import SESSION_SECONDS, password_hash, password_matches, validate_password
 from everlock.app import create_app
 
 PASSWORD = "Senha isolada para testes1!"
-ADMIN = {"username": "admin", "password": PASSWORD}
+ADMIN = {"username": "admin", "email": "admin@example.com", "password": PASSWORD}
 
 
 @pytest.fixture
 def accounts(tmp_path):
     real = [1000.0]
-    app = create_app(tmp_path / "accounts.sqlite3", session_clock=lambda: real[0])
+    mailer = RecordingMailer()
+    app = create_app(tmp_path / "accounts.sqlite3", session_clock=lambda: real[0], mailer=mailer)
+    app.mailbox = mailer.outbox
     with TestClient(app, base_url="http://localhost") as client:
         yield client, real, app
 
 
 def login(client, username="admin", password=PASSWORD):
-    return client.post("/api/auth/login", json={"username": username, "password": password})
+    return client.post("/api/auth/login", json={"identifier": username, "password": password})
 
 
 def prepare(client):
@@ -79,7 +82,9 @@ def test_virtual_time_does_not_expire_or_extend_real_session(accounts):
 def test_user_permissions_and_immediate_revocation(accounts):
     client, _, _ = accounts
     prepare(client)
-    client.post("/api/auth/users", json={"username": "pessoa", "password": PASSWORD})
+    client.post("/api/auth/users", json={
+        "username": "pessoa", "email": "pessoa@example.com", "password": PASSWORD,
+    })
     admin_token = client.cookies.get("everlock_session")
     client.cookies.clear()
     login(client, "pessoa")
@@ -145,7 +150,8 @@ def test_setup_rejects_cross_origin_and_never_echoes_password(accounts):
     client, _, _ = accounts
     assert client.post("/api/auth/setup", json=ADMIN,
                        headers={"Origin": "https://other.example"}).status_code == 403
-    response = client.post("/api/auth/setup", json={"username": "x", "password": "secreta"})
+    weak = {"username": "x", "email": "x@example.com", "password": "secreta"}
+    response = client.post("/api/auth/setup", json=weak)
     assert response.status_code == 422 and "secreta" not in response.text
 
 
@@ -197,7 +203,7 @@ def test_password_policy_rejects_each_missing_requirement(password):
 
 def test_six_character_and_long_passwords_work_without_truncation(accounts):
     client, _, _ = accounts
-    short = {"username": "admin", "password": "Ab1.cd"}
+    short = {"username": "admin", "email": "admin@example.com", "password": "Ab1.cd"}
     assert client.post("/api/auth/setup", json=short).status_code == 201
     assert login(client, password=short["password"]).status_code == 200
     long_password = "Ábc1?" + "x" * 10000
@@ -208,34 +214,40 @@ def test_six_character_and_long_passwords_work_without_truncation(accounts):
     assert login(client, password=long_password[:-1]).status_code == 401
 
 
-def test_registration_requires_approval_and_cannot_choose_privileges(accounts):
-    client, _, _ = accounts
+def test_registration_creates_account_without_approval_and_cannot_choose_privileges(accounts):
+    client, _, app = accounts
     prepare(client)
-    admin_token = client.cookies.get("everlock_session")
     client.post("/api/auth/logout", json={})
-    data = {"username": "Visitante", "password": "Ab1@cd", "confirm_password": "Ab1@cd"}
+    data = {"username": "Visitante", "email": "Visitante@Example.com", "password": "Ab1@cd",
+            "confirm_password": "Ab1@cd"}
     assert client.post("/api/auth/register", json={**data, "role": "admin"}).status_code == 422
     assert client.post("/api/auth/register", json={**data, "active": True}).status_code == 422
-    assert client.post("/api/auth/register", json=data).status_code == 201
+    response = client.post("/api/auth/register", json=data)
+    assert response.status_code == 201 and response.json()["delivery"] == "email"
+    assert "aprovação" not in response.text and "visitante@example.com" in response.text
+    # A conta já existe, ativa e sem aprovação; só falta confirmar o e-mail.
     assert client.get("/api/status").status_code == 401
-    assert login(client, "visitante", "Ab1@cd").status_code == 401
-    assert login(client).status_code == 200
-    assert client.cookies.get("everlock_session") != admin_token
-    pending = next(x for x in client.get("/api/auth/users").json()["items"]
-                   if x["username"] == "visitante")
-    assert pending["pending"] == 1 and not pending["active"] and pending["role"] == "user"
-    assert client.patch(f"/api/auth/users/{pending['id']}",
-                        json={"role": "user", "active": True}).status_code == 200
-    assert "registration_requested" in client.get("/api/auth/events").text
-    client.cookies.clear()
+    blocked = login(client, "visitante", "Ab1@cd")
+    assert blocked.status_code == 403 and blocked.json()["detail"]["code"] == "email_unconfirmed"
+    token = app.mailbox[-1]["token"]
+    assert client.post("/api/auth/confirm-email", json={"token": token}).status_code == 200
     assert login(client, "visitante", "Ab1@cd").status_code == 200
     assert client.get("/api/status").status_code == 200
-    assert client.get("/api/auth/users").status_code == 403
+    assert client.get("/api/auth/users").status_code == 403  # sempre com papel de usuário
+    client.cookies.clear()
+    assert login(client).status_code == 200
+    person = next(x for x in client.get("/api/auth/users").json()["items"]
+                  if x["username"] == "visitante")
+    assert person["role"] == "user" and person["active"] and not person["pending"]
+    assert person["email"] == "visitante@example.com" and person["email_confirmed"]
+    events = client.get("/api/auth/events").text
+    assert "registration_created" in events and "example.com" not in events
 
 
 def test_registration_setup_confirmation_and_duplicate_guards(accounts):
     client, _, _ = accounts
-    data = {"username": "visitante", "password": "Ab1$cd", "confirm_password": "Ab1$cd"}
+    data = {"username": "visitante", "email": "visitante@example.com", "password": "Ab1$cd",
+            "confirm_password": "Ab1$cd"}
     assert client.post("/api/auth/register", json=data).status_code == 409
     prepare(client)
     response = client.post("/api/auth/register", json={**data, "confirm_password": "diferente"})
@@ -244,8 +256,10 @@ def test_registration_setup_confirmation_and_duplicate_guards(accounts):
                        headers={"Origin": "https://other.example"}).status_code == 403
     assert client.post("/api/auth/register", json=data).status_code == 201
     assert client.post("/api/auth/register", json=data).status_code == 409
+    other_name = client.post("/api/auth/register", json={**data, "username": "outro"})
+    assert other_name.status_code == 409 and "e-mail" in other_name.json()["detail"]
     for path in ("setup", "register", "users"):
-        weak = {"username": "outrapessoa", "password": "abcdef"}
+        weak = {"username": "outrapessoa", "email": "outra@example.com", "password": "abcdef"}
         if path == "register":
             weak["confirm_password"] = "abcdef"
         assert client.post(f"/api/auth/{path}", json=weak).status_code == 422
@@ -254,15 +268,17 @@ def test_registration_setup_confirmation_and_duplicate_guards(accounts):
 def test_registration_limit_and_existing_password_compatibility(accounts):
     client, real, app = accounts
     # Uma conta criada antes da nova política continua conseguindo entrar.
-    app.state.accounts.setup("admin", "Senha antiga sem numero!")
+    app.state.accounts.setup("admin", "admin@example.com", "Senha antiga sem numero!")
     assert login(client, password="Senha antiga sem numero!").status_code == 200
-    data = {"username": "visitante", "password": "Ab1!cd", "confirm_password": "Ab1!cd"}
+    data = {"username": "visitante", "email": "visitante@example.com", "password": "Ab1!cd",
+            "confirm_password": "Ab1!cd"}
     assert client.post("/api/auth/register", json=data).status_code == 201
     for _ in range(4):
         assert client.post("/api/auth/register", json=data).status_code == 409
     assert client.post("/api/auth/register", json=data).status_code == 429
     real[0] += 301
-    assert client.post("/api/auth/register", json={**data, "username": "outra"}).status_code == 201
+    other = {**data, "username": "outra", "email": "outra@example.com"}
+    assert client.post("/api/auth/register", json=other).status_code == 201
 
 
 def test_console_recovery_uses_same_policy_and_revokes_sessions(tmp_path, monkeypatch):

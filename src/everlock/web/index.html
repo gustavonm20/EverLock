@@ -13,9 +13,18 @@
     <link rel="stylesheet" href="/static/theme.css">
     <link rel="stylesheet" href="/static/auth.css">
     <link rel="stylesheet" href="/static/communication.css">
+    <link rel="stylesheet" href="/static/identities.css">
+    <link rel="stylesheet" href="/static/pages.css">
     <script src="/static/app.js" defer></script>
     <script src="/static/auth.js" defer></script>
     <script src="/static/communication.js" defer></script>
+    <script src="/static/identities.js" defer></script>
+    <script src="/static/face-kit.js" defer></script>
+    <script src="/static/faces.js" defer></script>
+    <script src="/static/face-login.js" defer></script>
+    <script src="/static/notifications.js" defer></script>
+    <script src="/static/history.js" defer></script>
+    <script src="/static/pages.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Pular para o conteúdo</a>
@@ -46,6 +55,7 @@
         <a class="nav-link active" href="#simulador" aria-current="location"><svg class="icon"><use href="#icon-door"/></svg>Simulador</a>
         <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Status Nobreak</a>
         <a class="nav-link" href="#comunicacao"><svg class="icon"><use href="#icon-network"/></svg>Conexão</a>
+        <a class="nav-link" href="#identidades" data-admin><svg class="icon"><use href="#icon-face"/></svg>Identidades</a>
         <a class="nav-link" href="#atividade" data-admin><svg class="icon"><use href="#icon-activity"/></svg>Atividade</a>
         <a class="nav-link" href="#contas"><svg class="icon"><use href="#icon-users"/></svg>Conta</a>
         <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Etapas</a>
@@ -53,29 +63,46 @@
       <div class="sidebar-bottom">
         <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.4.0</span></span>
+        <span class="version">Versão <span id="version">0.13.0</span></span>
       </div>
     </aside>
 
     <div class="workspace">
       <header class="topbar">
-        <span class="breadcrumb">EverLock <span>/</span> Visão geral</span>
+        <span class="breadcrumb">EverLock <span>/</span> <span id="breadcrumb-page">Visão geral</span></span>
         <div class="topbar-actions"><span class="session-label" id="session-label"></span><button class="text-button" id="logout" type="button" hidden>Sair</button><span class="simulation-badge"><svg class="icon"><use href="#icon-info"/></svg>Simulação</span><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Ativar tema escuro" aria-pressed="false" title="Ativar tema escuro"><svg class="icon theme-moon" aria-hidden="true"><use href="#icon-moon"/></svg><svg class="icon theme-sun" aria-hidden="true"><use href="#icon-sun"/></svg></button></div>
       </header>
 
       <section class="auth-panel" id="auth-panel" aria-labelledby="auth-title">
         <p class="eyebrow">ACESSO LOCAL</p><h1 id="auth-title">Entre no EverLock</h1>
-        <p id="auth-description">Entre com seu usuário e senha. Se ainda não tem uma conta, faça seu cadastro.</p>
+        <p id="auth-description">Entre com seu e-mail ou usuário e a senha. Se ainda não tem conta, faça o cadastro.</p>
         <form id="login-form" class="account-form">
-          <label>Usuário<input name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+" placeholder="Seu nome de usuário"></label>
+          <label id="identifier-label">E-mail ou usuário<input id="identifier" name="identifier" autocomplete="username" required maxlength="254" placeholder="Seu e-mail ou nome de usuário"></label>
+          <label id="username-label" hidden>Nome de usuário<input id="reg-username" name="username" autocomplete="username" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.\-]+" placeholder="Ex.: maria.silva" disabled></label>
+          <label id="email-label" hidden>E-mail<input id="reg-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="nome@exemplo.com" disabled></label>
+          <label id="role-label" hidden>Tipo de conta<select id="reg-role" name="role" disabled><option value="user">Usuário</option><option value="admin">Administrador (exige código de convite)</option></select></label>
+          <p id="role-hint" class="password-rules" hidden></p>
+          <label id="invite-label" hidden>Código de convite de administrador<input id="reg-invite" name="invite_code" autocomplete="off" maxlength="64" placeholder="XXXX-XXXX-XXXX" disabled></label>
           <label>Senha<input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Sua senha" aria-describedby="password-rules"></label>
           <p id="password-rules" class="password-rules" hidden>No mínimo 6 caracteres, com letra maiúscula, minúscula, número e caractere especial, como . ? @ $. Sem limite máximo.</p>
           <label id="confirm-password-label" hidden>Confirmar senha<input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" disabled></label>
           <button class="button button-primary" id="auth-submit" type="submit">Entrar</button>
         </form>
         <p id="auth-message" role="status" aria-live="polite"></p>
-        <button class="text-button" id="auth-mode" type="button">Não tem conta? Criar conta</button>
+        <button class="text-button" id="auth-mode" type="button">Não tem conta? Cadastrar-se</button>
+        <button class="text-button" id="forgot-password" type="button">Esqueci minha senha</button>
+        <button class="text-button" id="resend-confirmation" type="button" hidden>Reenviar e-mail de confirmação</button>
         <button class="text-button" id="auth-refresh" type="button">Verificar conexão</button>
+        <div class="face-login" id="face-login-box" data-available="false" hidden>
+          <p class="face-login-or">ou</p>
+          <button class="button button-secondary" id="face-login" type="button">Entrar com o rosto</button>
+          <div id="face-login-panel" hidden>
+            <video id="face-login-video" class="face-video" playsinline muted hidden></video>
+            <p id="face-login-title" class="face-login-title" role="status" aria-live="polite"></p>
+            <p id="face-login-message" class="face-login-message" role="status" aria-live="polite"></p>
+            <button class="text-button" id="face-login-cancel" type="button">Cancelar</button>
+          </div>
+        </div>
       </section>
 
       <main id="main" hidden>
@@ -108,7 +135,7 @@
             </div>
             <div class="controls-panel">
               <div class="panel-heading"><span class="section-number">01</span><div><h2>Entrada por reconhecimento facial</h2><p>A identificação de uma pessoa autorizada permitirá liberar a trava.</p></div></div>
-              <details class="face-entry"><summary class="button button-primary"><svg class="icon"><use href="#icon-face"/></svg><span>Reconhecimento facial</span><svg class="icon action-arrow"><use href="#icon-arrow"/></svg></summary><div class="face-entry-info"><strong>Reconhecimento ainda não disponível</strong><p>O cadastro facial e a leitura pela câmera serão conectados a esta área. Abrir este painel não libera a porta e não ativa a câmera.</p></div></details>
+              <details class="face-entry"><summary class="button button-primary"><svg class="icon"><use href="#icon-face"/></svg><span>Reconhecimento facial</span><svg class="icon action-arrow"><use href="#icon-arrow"/></svg></summary><div class="face-entry-info"><strong id="face-entry-title">Verificando o reconhecimento facial…</strong><p id="face-entry-text">Abrir este painel não liga a câmera nem libera a porta.</p><div class="face-live" id="face-live" data-admin hidden><video id="face-verify-video" class="face-video" playsinline muted hidden></video><p class="face-entry-result" id="face-verify-result" role="status" aria-live="polite">Ligue a câmera e clique em Reconhecer. O sistema pedirá um giro curto do rosto; as imagens são analisadas na memória e descartadas.</p><div class="identity-actions"><button type="button" class="button button-secondary" id="face-camera-toggle">Ligar câmera</button><button type="button" class="button button-primary" id="face-verify" disabled>Reconhecer rosto e liberar trava</button></div></div><div class="face-entry-test" data-admin><strong>Teste simulado, sem câmera</strong><label for="face-identity">Identidade a reconhecer</label><select id="face-identity" disabled><option value="">Nenhuma identidade pronta</option></select><button type="button" class="button button-secondary" id="face-release" disabled>Liberar trava por reconhecimento (simulado)</button><p class="face-entry-result" id="face-result" role="status" aria-live="polite">Cadastre uma identidade em Identidades e registre o cadastro para testar aqui.</p></div><p data-user-only>Somente administradores executam o teste de reconhecimento. Peça a um administrador para liberar a trava.</p></div></details>
               <div class="release-info"><span id="release-description">Liberação temporária da trava virtual.</span><button type="button" class="text-button" data-action="end_release" disabled>Encerrar liberação</button></div>
               <div class="button-pair"><button type="button" class="button button-secondary" data-action="open" disabled><svg class="icon"><use href="#icon-arrow"/></svg><span>Abrir / entrar</span></button><button type="button" class="button button-secondary" data-action="close" disabled><svg class="icon"><use href="#icon-door"/></svg><span>Fechar porta</span></button></div>
               <div class="manual-controls"><div class="manual-heading"><h3>Acesso manual</h3><span>SIMULADO</span></div><p>Experimente as alternativas de entrada e saída.</p><div class="button-pair"><button type="button" class="button button-quiet" data-action="exit" disabled><svg class="icon"><use href="#icon-arrow"/></svg><span>Saída interna</span></button><button type="button" class="button button-quiet" data-action="key_entry" disabled><svg class="icon"><use href="#icon-key"/></svg><span>Usar chave</span></button></div></div>
@@ -135,7 +162,7 @@
             <button class="button button-primary" type="button" id="remote-unlock" disabled>Liberar trava</button>
             <button class="button button-secondary" type="button" id="remote-lock" disabled>Engatar trava</button>
           </div>
-          <p class="section-description">O prazo e o atraso do comando usam segundos reais. A liberação mantém os três segundos virtuais da porta. Engatar a trava exige porta fechada; a saída interna continua disponível.</p>
+          <p class="section-description">O prazo e o atraso do comando usam segundos reais. A liberação mantém os três segundos virtuais da porta. Engatar a trava exige porta fechada; a saída interna continua disponível. Este é o comando remoto de quem está com a sessão aberta; para liberar com o rosto de quem está no local, use Reconhecimento facial, acima.</p>
           <p class="action-feedback" id="command-feedback" role="status" aria-live="polite">Solicitar um comando ainda não confirma sua execução.</p>
           <details class="network-lab" data-admin>
             <summary>Simular falhas e atraso</summary>
@@ -205,11 +232,65 @@
           </details>
         </section>
 
+        <section class="identity-card" id="identidades" aria-labelledby="identity-title" data-admin>
+          <div class="section-heading"><div><p class="eyebrow">CONSENTIMENTO E CADASTRO</p><h2 id="identity-title">Identidades</h2></div><span class="subtle-badge">Cadastro simulado</span></div>
+          <p class="section-description">Identidades biométricas ficam separadas das contas de acesso. Nesta etapa nenhuma imagem, vetor ou modelo facial é coletado e a câmera não é ativada: o cadastro é um marcador simulado e os testes usam resultados preparados. Use um apelido ou código, não o nome completo.</p>
+          <div class="identity-consent">
+            <strong>Termo de consentimento <span id="consent-version"></span></strong>
+            <p id="consent-text">Carregando o termo…</p>
+          </div>
+          <form id="identity-form" class="identity-form">
+            <label>Apelido ou código<input name="label" required minlength="2" maxlength="40" autocomplete="off" placeholder="Ex.: Aluno 01"></label>
+            <label>Retenção em dias<input id="identity-retention" name="retention_days" type="number" min="1" max="365" value="30" required></label>
+            <label class="identity-wide">Janela de horário<select id="identity-window"><option value="always">Sempre, 24 horas</option><option value="business">Dias úteis, das 08:00 às 18:00</option><option value="custom">Personalizada</option></select></label>
+            <div class="identity-wide identity-custom" id="identity-custom" hidden>
+              <fieldset class="day-options"><legend>Dias permitidos</legend>
+                <label><input type="checkbox" name="day" value="0" checked>Seg</label><label><input type="checkbox" name="day" value="1" checked>Ter</label><label><input type="checkbox" name="day" value="2" checked>Qua</label><label><input type="checkbox" name="day" value="3" checked>Qui</label><label><input type="checkbox" name="day" value="4" checked>Sex</label><label><input type="checkbox" name="day" value="5">Sáb</label><label><input type="checkbox" name="day" value="6">Dom</label>
+              </fieldset>
+              <label>Início<input name="start" type="time" value="08:00"></label>
+              <label>Fim<input name="end" type="time" value="18:00"></label>
+              <p class="identity-hint">Se o início for depois do fim, a janela atravessa a meia-noite e a parte da madrugada pertence ao dia em que ela começou.</p>
+            </div>
+            <label class="identity-wide identity-check"><input type="checkbox" name="consent" required>Confirmo que a pessoa foi informada e concordou com o termo acima.</label>
+            <button class="button button-primary identity-wide" type="submit" id="identity-submit">Cadastrar identidade</button>
+          </form>
+          <p class="action-feedback" id="identity-message" role="status" aria-live="polite" aria-atomic="true">Cadastre uma identidade para começar. Nenhum dado biométrico será guardado.</p>
+          <h3 class="identity-list-heading">Identidades cadastradas</h3>
+          <div id="identity-list" class="identity-list" aria-busy="true"><p class="empty-state">Carregando identidades…</p></div>
+          <div class="face-capture" id="face-enroll-panel" hidden>
+            <h3 id="face-enroll-title">Cadastro facial pela câmera</h3>
+            <p class="identity-hint" id="face-enroll-help">O navegador vai pedir permissão para usar a câmera. Serão tiradas 5 fotos em poucos segundos; elas são analisadas na memória e descartadas, e só o vetor numérico do rosto é guardado, cifrado.</p>
+            <video id="face-enroll-video" class="face-video" playsinline muted></video>
+            <p class="action-feedback" id="face-enroll-step" role="status" aria-live="polite" aria-atomic="true"></p>
+            <div class="identity-actions"><button type="button" class="button button-primary" id="face-enroll-start">Iniciar captura</button><button type="button" class="button button-quiet" id="face-enroll-cancel">Fechar</button></div>
+          </div>
+          <div class="identity-tests">
+            <button class="button button-quiet" type="button" id="simulate-unknown">Simular rosto desconhecido</button>
+            <p>Resultado preparado: nenhuma identidade é reconhecida e a trava permanece engatada. Não usa câmera nem imagem.</p>
+          </div>
+          <details class="identity-audit"><summary>Histórico de identidades</summary><ol id="identity-history" class="account-history"></ol><p class="identity-hint">O histórico cita apenas o número da identidade, nunca o apelido, para que a exclusão não deixe dados pessoais.</p></details>
+        </section>
+
         <section class="activity-card" id="atividade" aria-labelledby="activity-title" data-admin>
           <div class="section-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2 id="activity-title">Atividade recente</h2></div><span class="subtle-badge" id="event-count">Carregando</span></div>
           <p class="section-description">Ações da porta e transições de energia, com data real e instante virtual.</p>
+          <form class="history-filter" id="history-filter">
+            <label>Resultado<select name="outcome"><option value="">Todos</option><option value="success">Sucesso</option><option value="info">Informação</option><option value="denied">Recusado</option><option value="failed">Falha</option></select></label>
+            <label>Origem<select name="source"><option value="">Todas</option><option value="manual">Manual</option><option value="lab">Laboratório</option><option value="remote">Remoto</option><option value="recognition">Reconhecimento</option><option value="system">Sistema</option></select></label>
+            <label>Buscar<input name="q" maxlength="80" placeholder="Texto no título, detalhe ou usuário" autocomplete="off"></label>
+            <label>De<input name="since" type="date"></label>
+            <label>Até<input name="until" type="date"></label>
+            <div class="identity-actions history-actions"><button class="button button-secondary" type="submit">Filtrar</button><button class="button button-quiet" type="button" id="history-clear">Limpar</button><button class="button button-quiet" type="button" id="history-export">Baixar CSV</button></div>
+            <p class="action-feedback" id="history-note" role="status" aria-live="polite"></p>
+          </form>
           <div id="events" class="events-list" aria-busy="true"><div class="empty-state">Carregando o histórico…</div></div>
           <div class="history-footer"><svg class="icon"><use href="#icon-check"/></svg>Histórico salvo neste computador.</div>
+          <div class="notify-box" id="notify-box">
+            <h3>Notificações (n8n)</h3>
+            <p id="notify-status">Verificando…</p>
+            <div class="identity-actions"><button class="button button-secondary" type="button" id="notify-test">Enviar notificação de teste</button></div>
+            <p class="action-feedback" id="notify-message" role="status" aria-live="polite"></p>
+          </div>
         </section>
 
         <section class="account-section" id="contas" aria-labelledby="account-title">
@@ -221,15 +302,35 @@
             <p class="password-rules" id="account-password-rules">No mínimo 6 caracteres, com maiúscula, minúscula, número e caractere especial. Sem limite máximo.</p>
             <button class="button button-secondary" type="submit">Trocar minha senha</button>
           </form>
+          <div class="account-face" id="account-face">
+            <h3>Entrar com o rosto</h3>
+            <p id="account-face-status">Verificando…</p>
+            <video id="account-face-video" class="face-video" playsinline muted hidden></video>
+            <form id="account-face-form" class="account-form">
+              <p class="identity-hint" id="account-face-consent"></p>
+              <label>Senha atual<input name="password" type="password" autocomplete="current-password" required></label>
+              <label class="identity-check"><input type="checkbox" name="consent" required>Li e concordo com o termo acima.</label>
+              <p class="action-feedback" id="account-face-step" role="status" aria-live="polite"></p>
+              <div class="identity-actions"><button class="button button-secondary" type="submit" id="account-face-submit">Cadastrar meu rosto</button><button class="button button-quiet" type="button" id="account-face-remove" hidden>Remover meu rosto</button></div>
+            </form>
+          </div>
           <div data-admin>
             <h3>Pessoas com acesso</h3>
             <p>Usuários acompanham a porta e enviam comandos pelo painel remoto. Administradores também controlam cenários de teste, chave de demonstração, contas e histórico. O último administrador ativo é preservado.</p>
             <form id="new-user-form" class="account-form">
-              <label>Novo usuário<input name="username" autocomplete="off" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.-]+"></label>
+              <label>Novo usuário<input name="username" autocomplete="off" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.\-]+"></label>
+              <label>E-mail do usuário<input name="email" type="email" autocomplete="off" required maxlength="254" placeholder="nome@exemplo.com"></label>
               <label>Senha inicial<input name="password" type="password" autocomplete="new-password" required data-new-password aria-describedby="account-password-rules"></label>
               <label>Papel<select name="role"><option value="user">Usuário</option><option value="admin">Administrador</option></select></label>
               <button class="button button-primary" type="submit">Criar conta</button>
             </form>
+            <div class="invite-box">
+              <h3>Convites de administrador</h3>
+              <p>Quem escolhe “Administrador” ao se cadastrar precisa de um código gerado aqui. Cada código vale 24 horas e só pode ser usado uma vez. Ele aparece só agora: copie e envie à pessoa por um canal seguro.</p>
+              <button class="button button-secondary" type="button" id="create-invite">Gerar código de convite</button>
+              <div id="invite-new" class="invite-new" hidden><code id="invite-code"></code><button class="button button-quiet" type="button" id="copy-invite">Copiar</button></div>
+              <div id="invite-list"></div>
+            </div>
             <div id="account-list"></div>
             <details><summary>Histórico de contas</summary><ol id="account-history" class="account-history"></ol></details>
           </div>
@@ -238,11 +339,11 @@
 
         <section id="evolucao" class="roadmap" aria-labelledby="roadmap-title">
           <div class="section-heading"><div><p class="eyebrow">CONSTRUÍDO EM ETAPAS</p><h2 id="roadmap-title">A base de algo maior.</h2></div><span class="subtle-badge">Em desenvolvimento</span></div>
-          <p class="section-description">Porta, energia, contas e comunicação simulada estão disponíveis. O próximo passo é preparar o cadastro facial com consentimento.</p>
+          <p class="section-description">Porta, energia, contas, comunicação e reconhecimento local com consentimento estão disponíveis. A validação com imagens autorizadas ainda depende do grupo.</p>
           <div class="roadmap-grid">
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emergência</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Disponível no laboratório</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permissões</h3><p>Contas, autorizações e gerenciamento de quem pode entrar.</p><span class="future-label">Disponível no laboratório</span></article>
-            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-face"/></svg></span><h3>Reconhecimento facial</h3><p>Identificação por imagens integrada às regras de acesso.</p><span class="future-label">Planejado</span></article>
+            <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-face"/></svg></span><h3>Reconhecimento facial</h3><p>Cadastro local, vetores cifrados, comparação OpenCV e desafio de movimento antes da liberação.</p><span class="future-label">Implementado; calibração pendente</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-network"/></svg></span><h3>Falhas de conexão</h3><p>Comandos com prazo, atraso, observação antiga e reconexão segura.</p><span class="future-label">Disponível no laboratório</span></article>
           </div>
         </section>

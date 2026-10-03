@@ -13,11 +13,14 @@ from everlock.storage import Storage
 
 
 class Controller:
+    face_recognition_available = False  # a aplicação liga quando o motor facial está pronto
+
     def __init__(self, storage: Storage, clock: Callable[[], float] = time.monotonic):
         self.storage = storage
         self.clock = clock
         self.mutex = RLock()
         self.actor = None
+        self.notifier = None  # a aplicação liga; avisos nunca bloqueiam a porta
         self.door_version = str(uuid4())
         self.door = storage.load()
         self.power, self.timeline = storage.load_simulation()
@@ -45,6 +48,9 @@ class Controller:
         stamped = [replace(e, actor=self.actor) if e.source != "system" else e for e in stamped]
         # Porta, bateria, relógio e eventos são publicados só depois da transação.
         self.storage.save(door, stamped, power, timeline, command_result)
+        if self.notifier is not None:
+            for event in stamped:
+                self.notifier.publish_event(event)
         self.door, self.power, self.timeline = door, power, timeline
         if door_changed:
             self.door_version = str(uuid4())
@@ -104,7 +110,8 @@ class Controller:
             "power": power, "simulation": asdict(self.timeline),
             "capabilities": {
                 "door": True, "power": True, "connectivity": True,
-                "face_recognition": False, "authentication": True,
+                "face_recognition": self.face_recognition_available, "authentication": True,
+                "identities": True,
             },
             "revision": self.door.revision, "updated_at": self.door.updated_at,
             "observed_at": datetime.now(UTC).isoformat(),
@@ -174,6 +181,43 @@ class Controller:
                               "remote", "denied")
             self._commit(door, power, timeline, [event],
                          (command["id"], status, code, message, now))
+
+    def recognition_release(self, reference: str, *, simulated: bool = True,
+                            note: str = "", guard: Callable[[], None] | None = None
+                            ) -> tuple[int, dict]:
+        """Libera a trava após uma decisão de reconhecimento já autorizada.
+
+        A regra é a do canal remoto: só com dispositivo ligado e porta fechada. A porta não
+        abre sozinha; depois da liberação ainda é preciso usar a ação de entrada.
+        """
+        with self.mutex:
+            self._sync()
+            door, power, timeline = self._copy()
+            try:
+                if guard is not None:
+                    guard()  # A sincronização pode ter consumido o prazo de autorização.
+                if not power.device_on:
+                    raise Denied(
+                        "device_recovering" if power.recovery_deadline is not None
+                        else "device_powered_off",
+                        "Dispositivo virtual indisponível. Saída, chave e fechamento são manuais.",
+                    )
+                if door.position != "closed":
+                    raise Denied("door_open", "Feche a porta antes de liberar a trava.")
+                event = replace(
+                    apply_action(door, "unlock", timeline.elapsed_seconds),
+                    title=("Acesso liberado por reconhecimento simulado" if simulated
+                           else "Acesso liberado por reconhecimento facial"),
+                    detail=(f"Identidade {reference} autorizada"
+                            f"{' em teste simulado' if simulated else ' pelo rosto'}"
+                            f"{note}. Trava virtual liberada por 3 segundos; a porta continua "
+                            "fechada."),
+                    source="recognition",
+                )
+            except Denied as error:
+                return self._denied(error)
+            self._commit(door, power, timeline, [event])
+            return self._success(event.detail)
 
     def record(self, event: Event) -> None:
         with self.mutex:
@@ -259,6 +303,14 @@ class Controller:
             ))
             self._commit(door, power, timeline, events)
             return self._success(message)
+
+    def search_events(self, limit: int, filters) -> list[dict]:
+        from everlock.history import build_where
+
+        where, params = build_where(filters)
+        with self.mutex:
+            self._sync()
+            return self.storage.search_events(limit, where, params)
 
     def events(self, limit: int) -> list[dict]:
         with self.mutex:

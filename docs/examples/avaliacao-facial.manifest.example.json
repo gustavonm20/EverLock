@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "subjects": [
+    {
+      "code": "p001",
+      "consent": false,
+      "enrollment": [
+        "cadastro/p001-1.jpg",
+        "cadastro/p001-2.jpg",
+        "cadastro/p001-3.jpg"
+      ],
+      "tests": [
+        "teste/p001-1.jpg",
+        "teste/p001-2.jpg"
+      ]
+    },
+    {
+      "code": "p002",
+      "consent": false,
+      "enrollment": [],
+      "tests": [
+        "teste/p002-1.jpg",
+        "teste/p002-2.jpg"
+      ]
+    }
+  ]
+}

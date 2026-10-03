@@ -7,9 +7,11 @@ from everlock.app import create_app
 
 
 def sign_in(client):
-    data = {"username": "admin", "password": "Senha somente para testes1!"}
+    data = {"username": "admin", "email": "admin@example.com",
+            "password": "Senha somente para testes1!"}
     assert client.post("/api/auth/setup", json=data).status_code == 201
-    assert client.post("/api/auth/login", json=data).status_code == 200
+    login = {"identifier": "admin", "password": data["password"]}
+    assert client.post("/api/auth/login", json=login).status_code == 200
 
 
 @pytest.fixture
@@ -25,7 +27,7 @@ def test_health_status_and_assets(client):
     assert status["door"]["secured"]
     assert status["capabilities"] == {
         "door": True, "power": True, "connectivity": True,
-        "face_recognition": False, "authentication": True,
+        "face_recognition": False, "authentication": True, "identities": True,
     }
     page = client.get("/")
     assert page.status_code == 200

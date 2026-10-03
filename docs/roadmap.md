@@ -4,7 +4,7 @@ O trabalho será executado em incrementos pela IA, com implementação, testes, 
 
 ## Situação atual
 
-A base, porta, energia, tema, contas e permissões estão entregues. O incremento 0.4 acrescenta comandos com prazo real, confirmação e falhas de conexão simuladas, com validação em [status.md](status.md). O nobreak será usado somente para alimentar o computador; sua integração por software foi retirada do escopo. O quadro detalhado fica em [planning.md](planning.md) e no [Notion](https://app.notion.com/p/EverLock-3e8e2dde06ab809c893fcbd6a4958ff8).
+A base, porta, energia, tema, contas e permissões estão entregues. O incremento 0.4 acrescenta comandos com prazo real, confirmação e falhas de conexão simuladas, com validação em [status.md](status.md). O incremento 0.11 entregou filtros e exportação do histórico e o roteiro de apresentação ([roteiro-apresentacao.md](roteiro-apresentacao.md)). O incremento 0.8 entregou as notificações por webhook para o n8n ([notifications.md](notifications.md)). O incremento 0.6 entregou a base do reconhecimento facial com OpenCV e o 0.12 passou a exigir um desafio de movimento antes de liberar a porta ([facial-recognition.md](facial-recognition.md)); ainda falta calibrar com imagens autorizadas. O incremento 0.5 entregou identidades com consentimento, retenção e horários, mais o teste de reconhecimento simulado ([identities.md](identities.md)). O nobreak será usado somente para alimentar o computador; sua integração por software foi retirada do escopo. O quadro detalhado fica em [planning.md](planning.md) e no [Notion](https://app.notion.com/p/EverLock-3e8e2dde06ab809c893fcbd6a4958ff8).
 
 | Etapa | Entrega | Critério de conclusão |
 |---|---|---|
@@ -22,7 +22,7 @@ A base, porta, energia, tema, contas e permissões estão entregues. O increment
 
 ## Próximo incremento
 
-Implementar consentimento, cadastro e exclusão de identidades biométricas separadas das contas. Depois selecionar e validar o pipeline de reconhecimento local, usando imagens autorizadas distintas para cadastro e avaliação. Resultados preparados para testes devem ser identificados como simulados. O protocolo de comandos e a reconexão sem execução de pedidos antigos estão descritos em [communication.md](communication.md).
+O incremento 0.13 prepara a [avaliação facial](avaliacao-facial.md) e os [cenários integrados](cenarios-integrados.md). Execute o pipeline já implementado (YuNet, SFace, vetores cifrados e desafio de movimento) com imagens autorizadas distintas para cadastro e avaliação. Ajuste limites somente a partir dessas medições; consentimento da identidade pela própria pessoa segue pendente. Resultados preparados para testes continuam identificados como simulados. O protocolo de comandos e a reconexão sem execução de pedidos antigos estão descritos em [communication.md](communication.md).
 
 A energia virtual usa Wh e parâmetros didáticos explícitos. Seus resultados não representam medições do nobreak. O grupo comprará somente esse equipamento adicional para sustentar o computador; autonomia e compatibilidade serão verificadas com o modelo real. Desligar o computador continua encerrando a aplicação.
 

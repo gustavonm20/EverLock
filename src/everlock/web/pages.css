@@ -1,0 +1,7 @@
+main > section[hidden] {
+  display: none !important;
+}
+
+main > section:not([hidden]) {
+  min-height: calc(100vh - 114px);
+}

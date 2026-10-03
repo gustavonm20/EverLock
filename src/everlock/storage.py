@@ -135,5 +135,10 @@ class Storage:
             ).fetchall()
         ]
 
+    def search_events(self, limit: int, where: str, params: list) -> list[dict]:
+        """`where` vem de `history.build_where`: fragmentos fixos, valores em parâmetros."""
+        query = f"SELECT * FROM events{where} ORDER BY id DESC LIMIT ?"
+        return [dict(row) for row in self.connection.execute(query, (*params, limit)).fetchall()]
+
     def close(self) -> None:
         self.connection.close()
