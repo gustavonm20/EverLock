@@ -90,6 +90,10 @@ O software funciona sem o nobreak e não exige hospedagem ou assinatura paga. A 
 
 ## Dados e configuração
 
+Administradores podem abrir **Diagnóstico** para consultar versão e componentes
+locais, com o horário e os limites de cada verificação. A página não abre câmera nem
+envia mensagens de teste. Veja [o guia](docs/diagnostico.md).
+
 O banco é criado em `data/everlock.sqlite3`, na pasta do projeto. Ele guarda estado, eventos, contas, hashes de senhas, sessões, identidades e vetores cifrados; reiniciar o aplicativo não apaga os cadastros. Ao abrir novamente, entre com seu e-mail/usuário e senha — não é necessário se cadastrar outra vez. O cadastro normal exige confirmar o e-mail uma única vez antes do primeiro login. A pasta de dados fica fora do controle de versão. Use `backup.cmd` para copiar banco e chave de maneira consistente, mesmo com o aplicativo aberto, e restrinja o acesso aos arquivos locais.
 
 As configurações opcionais são variáveis de ambiente:
@@ -131,6 +135,9 @@ Os testes cobrem porta, energia, relógio, migração, recuperação, autentica�
 - [Pendências em aberto](docs/pendencias.md)
 - [Roteiro de apresentação](docs/roteiro-apresentacao.md)
 - [Cópia de segurança e restauração](docs/backup.md)
+- [Diagnóstico local](docs/diagnostico.md)
+- [Testes de interface no navegador](docs/testes-interface.md)
+- [Regras de colaboração no projeto](AGENTS.md)
 - [Identidades, consentimento e reconhecimento simulado](docs/identities.md)
 - [Reconhecimento facial e limites](docs/facial-recognition.md)
 - [Avaliação facial local](docs/avaliacao-facial.md)

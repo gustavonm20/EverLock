@@ -23,6 +23,7 @@ from everlock.auth_api import router as auth_router
 from everlock.biometrics import TemplateVault
 from everlock.communication import Communication
 from everlock.controller import Controller
+from everlock.diagnostics import router as diagnostics_router
 from everlock.domain import Action
 from everlock.energy import PowerConfig
 from everlock.face_auth_api import router as face_auth_router
@@ -202,6 +203,7 @@ def create_app(
     app.include_router(identity_router)
     app.include_router(face_auth_router)
     app.include_router(notifications_router)
+    app.include_router(diagnostics_router)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, error: RequestValidationError):

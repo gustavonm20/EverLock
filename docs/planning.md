@@ -94,6 +94,20 @@ Guias: [avaliação facial](avaliacao-facial.md), [cenários integrados](cenario
 
 ## Rotina da equipe
 
+### Melhoria complementar 0.14 — diagnóstico e manutenção
+
+Autorizada após a integração do PR #20. Reúne os sinais já disponíveis em uma página
+administrativa de diagnóstico e acrescenta quatro jornadas de navegador reproduzíveis.
+Critérios: leitura sem atuação/envio, acesso administrativo, mensagens sem dados
+sensíveis, descarte de respostas antigas e legibilidade no computador/celular.
+Consulte [diagnostico.md](diagnostico.md), [testes-interface.md](testes-interface.md)
+e as regras de colaboração em [AGENTS.md](../AGENTS.md).
+
+Por orientação do responsável em 03/10/2026, continuam adiados os sete grupos de
+pendências: consentimento pessoal; avaliação facial real; câmera real; demonstração
+humana; instalação/e-mail/backup operacionais; nobreak externo; n8n/relatórios periódicos.
+Esta melhoria não encerra nenhum desses aceites nem altera os estados das etapas 10 a 15.
+
 A IA implementa, documenta e executa verificações. A equipe revisa o resultado e informa exigências acadêmicas. Cada incremento deve apresentar o que mudou, como reproduzir e o que ainda falta. Imagens de pessoas só entram na etapa facial, com autorização.
 
 Não criar prazos fictícios. Quando houver data de apresentação, distribuir o trabalho conforme dependências e reservar uma etapa para integração e correção. O Notion organiza o trabalho; o GitHub guarda código, testes e revisão.

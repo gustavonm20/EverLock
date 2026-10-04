@@ -57,6 +57,7 @@ class FaceEngine(Protocol):
 
 class UnavailableEngine:
     available, model_id = False, "nenhum"
+    reason_code = "unavailable"
 
     def __init__(self, reason: str):
         self.reason = reason
@@ -71,6 +72,7 @@ class OpenCVFaceEngine:
     def __init__(self, models_dir: Path):
         self.models_dir = Path(models_dir)
         self.available, self.reason = False, ""
+        self.reason_code = "not_loaded"
         self._lock = threading.Lock()
         self._detector = self._recognizer = self._cv2 = self._np = None
         self._load()
@@ -80,12 +82,14 @@ class OpenCVFaceEngine:
             import cv2
             import numpy
         except ImportError:
+            self.reason_code = "dependencies_missing"
             self.reason = ("A biblioteca OpenCV não está instalada. Rode .\\iniciar.cmd "
                            "para instalar as dependências.")
             return
         missing = [name for name in (DETECTOR_MODEL, RECOGNIZER_MODEL)
                    if not (self.models_dir / name).is_file()]
         if missing:
+            self.reason_code = "models_missing"
             self.reason = ("Modelos de reconhecimento ausentes. Rode "
                            "python scripts\\baixar_modelos.py (veja docs/facial-recognition.md).")
             return
@@ -98,10 +102,12 @@ class OpenCVFaceEngine:
                 str(self.models_dir / RECOGNIZER_MODEL), "",
             )
         except cv2.error as error:
+            self.reason_code = "models_invalid"
             self.reason = f"Os modelos não puderam ser carregados: {error.msg or 'erro do OpenCV'}"
             return
         self._cv2, self._np = cv2, numpy
         self.available = True
+        self.reason_code = ""
 
     def read(self, image: bytes) -> FaceReading:
         if not self.available:

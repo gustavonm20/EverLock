@@ -24,6 +24,7 @@
     <script src="/static/face-login.js" defer></script>
     <script src="/static/notifications.js" defer></script>
     <script src="/static/history.js" defer></script>
+    <script src="/static/diagnostics.js" defer></script>
     <script src="/static/pages.js" defer></script>
   </head>
   <body>
@@ -57,13 +58,14 @@
         <a class="nav-link" href="#comunicacao"><svg class="icon"><use href="#icon-network"/></svg>Conexão</a>
         <a class="nav-link" href="#identidades" data-admin><svg class="icon"><use href="#icon-face"/></svg>Identidades</a>
         <a class="nav-link" href="#atividade" data-admin><svg class="icon"><use href="#icon-activity"/></svg>Atividade</a>
+        <a class="nav-link" href="#diagnostico" data-admin><svg class="icon"><use href="#icon-info"/></svg>Diagnóstico</a>
         <a class="nav-link" href="#contas"><svg class="icon"><use href="#icon-users"/></svg>Conta</a>
         <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Etapas</a>
       </nav>
       <div class="sidebar-bottom">
         <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.13.0</span></span>
+        <span class="version">Versão <span id="version">0.14.0</span></span>
       </div>
     </aside>
 
@@ -291,6 +293,25 @@
             <div class="identity-actions"><button class="button button-secondary" type="button" id="notify-test">Enviar notificação de teste</button></div>
             <p class="action-feedback" id="notify-message" role="status" aria-live="polite"></p>
           </div>
+        </section>
+
+        <section class="diagnostics-page" id="diagnostico" aria-labelledby="diagnostics-title" data-admin>
+          <div class="section-heading diagnostics-heading">
+            <div><p class="eyebrow">ESTADO DESTA INSTALAÇÃO</p><h2 id="diagnostics-title">Diagnóstico do EverLock</h2></div>
+            <button class="button button-secondary" id="diagnostics-refresh" type="button" aria-controls="diagnostics-checks" disabled>Atualizar diagnóstico</button>
+          </div>
+          <p class="page-description">Consulte a aplicação, os dados locais e os serviços configurados para entender o que está disponível neste computador.</p>
+          <div class="diagnostics-context">
+            <p>Esta é uma leitura do momento da consulta. Ela é atualizada ao abrir a página ou ao selecionar <strong>Atualizar diagnóstico</strong>.</p>
+            <p>Um serviço configurado ainda precisa de teste real. Esta consulta não liga a câmera nem envia e-mails ou notificações.</p>
+          </div>
+          <dl class="diagnostics-summary" id="diagnostics-summary" hidden>
+            <div><dt>Versão consultada</dt><dd id="diagnostics-version">—</dd></div>
+            <div><dt>Ambiente</dt><dd>Simulação local</dd></div>
+            <div><dt>Última consulta</dt><dd><time id="diagnostics-checked-at">—</time></dd></div>
+          </dl>
+          <p class="diagnostics-message" id="diagnostics-message" role="status" aria-live="polite" aria-atomic="true"></p>
+          <div class="diagnostics-grid" id="diagnostics-checks" aria-busy="false"></div>
         </section>
 
         <section class="account-section" id="contas" aria-labelledby="account-title">
