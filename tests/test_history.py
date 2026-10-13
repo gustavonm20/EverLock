@@ -175,3 +175,34 @@ def test_export_neutralizes_formulas_stored_in_events(lab):
     assert len(rows) == 1
     assert rows[0]["titulo"] == "'=cmd|calc" and rows[0]["detalhe"] == "'@SUM(1+1)"
     assert rows[0]["usuario"] == "'+55"
+
+
+def test_cursor_has_no_duplicates_when_new_events_arrive(lab):
+    client, _ = lab
+    original = items(client)
+    page = client.get("/api/events?limit=2").json()
+    assert page["has_more"] and page["next_cursor"] == page["items"][-1]["id"]
+    seen = page["items"][:]
+    client.post("/api/actions", json={"action": "key_entry"})
+    while page["has_more"]:
+        page = client.get("/api/events", params={
+            "limit": 2, "before_id": page["next_cursor"],
+        }).json()
+        seen += page["items"]
+    assert [row["id"] for row in seen] == [row["id"] for row in original]
+    assert page["next_cursor"] is None
+    assert client.get("/api/events?before_id=0").status_code == 422
+    assert client.get("/api/events?until=9999-12-31").status_code == 200
+
+
+def test_csv_indicates_truncation_and_can_continue(lab):
+    client, _ = lab
+    first = client.get("/api/events/export.csv?limit=2")
+    assert first.headers["x-everlock-has-more"] == "true"
+    assert first.headers["x-everlock-row-count"] == "2"
+    cursor = first.headers["x-everlock-next-cursor"]
+    remainder = client.get("/api/events/export.csv", params={"before_id": cursor})
+    assert remainder.headers["x-everlock-has-more"] == "false"
+    assert [row["id"] for row in parse(first) + parse(remainder)] == [
+        str(row["id"]) for row in items(client)
+    ]

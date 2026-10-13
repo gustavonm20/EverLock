@@ -1,0 +1,4 @@
+interface:
+  display_name: "EverLock: preparar entrega"
+  short_description: "Prepare versões e publicações rastreáveis"
+  default_prompt: "Use $everlock-release para preparar a entrega atual do EverLock e mostrar o que está pronto para publicação."

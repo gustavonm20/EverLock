@@ -4,7 +4,7 @@
 // ao servidor local e nunca são salvas: nem aqui, nem lá. Só admins usam estes recursos.
 (() => {
   const byId = (id) => document.getElementById(id);
-  const SHOTS = 5, SHOT_INTERVAL_MS = 900;
+  const SHOTS = 5;
   const prompts = [
     "Olhe de frente para a câmera.", "Continue de frente, relaxado.",
     "Vire o rosto bem pouco para a esquerda.", "Vire o rosto bem pouco para a direita.",
@@ -14,6 +14,7 @@
   let status = { available: false, reason: "Verificando…" };
   let enrollingId = null, busy = false, generation = 0, sessionGeneration = 0;
   let cameraStarting = false, activeChallenge = null;
+  let enrollmentPolicy = null, returnFocus = null;
 
   const isAdmin = () => document.body.dataset.role === "admin";
 
@@ -33,6 +34,9 @@
     byId("face-camera-toggle").textContent = "Ligar câmera";
     byId("face-verify").disabled = true;
     byId("face-enroll-panel").hidden = true; enrollingId = null; busy = false;
+    enrollmentPolicy = null; byId("face-subject-consent").checked = false;
+    byId("face-enroll-prepare").disabled = true;
+    byId("face-enroll-start").disabled = true;
   }
 
   // --- estado do motor facial ---------------------------------------------------------------
@@ -58,36 +62,61 @@
   // --- cadastro facial ----------------------------------------------------------------------
   const step = (text, outcome = "info") => { byId("face-enroll-step").textContent = text; byId("face-enroll-step").dataset.outcome = outcome; };
 
-  document.addEventListener("everlock-face-enroll", async (event) => {
+  document.addEventListener("everlock-face-enroll", (event) => {
     if (!isAdmin() || busy || cameraStarting) return;
     stopAll();
-    const session = generation;
+    returnFocus = document.activeElement;
     const panel = byId("face-enroll-panel");
     panel.hidden = false; enrollingId = event.detail.id;
     byId("face-enroll-title").textContent = `Cadastro facial da identidade #${enrollingId}`;
-    byId("face-enroll-start").disabled = !status.available;
+    enrollmentPolicy = event.detail;
+    byId("face-enroll-start").disabled = true;
+    byId("face-subject-text").textContent = event.detail.text;
+    byId("face-subject-retention").textContent = `Prazo escolhido: ${event.detail.retention} dias. Exclusão prevista: ${new Date(event.detail.expiresAt * 1000).toLocaleString("pt-BR")}. O aceite não renova esse prazo.`;
     panel.scrollIntoView({ block: "nearest" });
     if (!status.available) { step(`${status.reason}`, "error"); return; }
+    step("1 de 3 · Leia o termo com a pessoa. A câmera ainda está desligada.");
+    byId("face-subject-consent").focus({ preventScroll: true });
+  });
+
+  byId("face-subject-consent").addEventListener("change", () => {
+    if (!byId("face-subject-consent").checked && (cameraStarting || isOn(byId("face-enroll-video")))) { stopAll(); return; }
+    byId("face-enroll-prepare").disabled = !byId("face-subject-consent").checked || !status.available || cameraStarting;
+  });
+  byId("face-enroll-prepare").addEventListener("click", async () => {
+    if (!isAdmin() || busy || !enrollmentPolicy || cameraStarting || isOn(byId("face-enroll-video")) || !byId("face-subject-consent").checked) return;
+    const session = generation;
     cameraStarting = true; byId("face-enroll-start").disabled = true;
+    byId("face-enroll-prepare").disabled = true;
     try {
+      const consent = await api(`identities/${enrollingId}/consent/confirm`, "POST", { accepted: true, version: enrollmentPolicy.version });
+      if (session !== generation) return;
+      if (!consent.ok) throw new Error(typeof consent.value.detail === "string" ? consent.value.detail : "Não foi possível registrar o aceite.");
       await startCamera(byId("face-enroll-video"));
       if (session !== generation) { stopCamera(byId("face-enroll-video")); return; }
-      step("Câmera ligada. Posicione o rosto no centro e clique em Iniciar captura.");
+      step("2 de 3 · Câmera ligada. Use boa iluminação, fique sozinho no enquadramento e centralize o rosto. Inicie quando estiver pronto.");
       byId("face-enroll-start").disabled = false;
+      byId("face-enroll-start").focus();
     } catch (error) {
       if (session === generation) { step(error.message, "error"); byId("face-enroll-start").disabled = true; }
-    } finally { cameraStarting = false; }
+    } finally {
+      cameraStarting = false;
+      if (session === generation) byId("face-enroll-prepare").disabled = !byId("face-subject-consent").checked || isOn(byId("face-enroll-video"));
+    }
   });
 
   byId("face-enroll-start").addEventListener("click", async () => {
     if (!isAdmin() || busy || enrollingId === null || !isOn(byId("face-enroll-video"))) return;
     busy = true; byId("face-enroll-start").disabled = true;
     const video = byId("face-enroll-video"), id = enrollingId, session = generation;
+    const images = [];
     try {
-      const images = [];
       for (let shot = 0; shot < SHOTS; shot += 1) {
-        step(`Foto ${shot + 1} de ${SHOTS}: ${prompts[shot]}`);
-        await pause(SHOT_INTERVAL_MS);
+        for (let remaining = 3; remaining > 0; remaining -= 1) {
+          step(`3 de 3 · Foto ${shot + 1}/${SHOTS}: ${prompts[shot]} Captura em ${remaining}…`);
+          await pause(1000);
+          if (session !== generation || enrollingId !== id) return;
+        }
         if (session !== generation || enrollingId !== id) return;
         images.push(capture(video));
       }
@@ -99,11 +128,12 @@
     } catch {
       if (session === generation) step("Não foi possível concluir o cadastro. Tente novamente.", "error");
     } finally {
+      images.length = 0;
       if (session === generation) { busy = false; byId("face-enroll-start").disabled = !isOn(video); }
     }
   });
 
-  byId("face-enroll-cancel").addEventListener("click", stopAll);
+  byId("face-enroll-cancel").addEventListener("click", () => { stopAll(); if (returnFocus?.isConnected) returnFocus.focus(); });
 
   // --- reconhecimento na tela principal -----------------------------------------------------
   const verifyResult = byId("face-verify-result");

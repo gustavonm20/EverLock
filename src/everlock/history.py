@@ -18,6 +18,7 @@ class EventFilter:
     q: str | None = None
     since: date | None = None  # dia inicial, no fuso deste computador
     until: date | None = None  # dia final, inclusive
+    before_id: int | None = None
 
 
 def escape_like(text: str) -> str:
@@ -32,6 +33,9 @@ def utc_bound(day: date) -> str:
 def build_where(filters: EventFilter) -> tuple[str, list]:
     """Cláusula WHERE só com fragmentos fixos e valores em parâmetros (sem texto do usuário)."""
     clauses, params = [], []
+    if filters.before_id is not None:
+        clauses.append("id < ?")
+        params.append(filters.before_id)
     for column, value in (("outcome", filters.outcome), ("source", filters.source),
                           ("type", filters.type)):
         if value:
@@ -45,7 +49,7 @@ def build_where(filters: EventFilter) -> tuple[str, list]:
     if filters.since:
         clauses.append("created_at >= ?")
         params.append(utc_bound(filters.since))
-    if filters.until:
+    if filters.until and filters.until != date.max:
         clauses.append("created_at < ?")
         params.append(utc_bound(date.fromordinal(filters.until.toordinal() + 1)))
     return (" WHERE " + " AND ".join(clauses)) if clauses else "", params

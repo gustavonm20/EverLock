@@ -49,6 +49,14 @@ O SQLite grava porta, energia, relógio e eventos na mesma transação. A migra�
 
 O desligamento virtual não encerra o servidor real: os controles do laboratório continuam acessíveis para restaurar energia e demonstrar operações manuais. Esses dados representam a visão interna do simulador, e não telemetria recebida de um equipamento sem alimentação.
 
+A versão 0.15 centraliza as migrações em `database.py`, com versão de esquema e
+DDL transacional antes da construção dos serviços. `history_api.py` separa o
+contrato tipado de paginação/CSV da composição do aplicativo. `observability.py`
+limita os corpos de requisição e registra somente metadados técnicos com rotação.
+`outbox.py` isola avisos opcionais em outro SQLite, com retenção de 24 horas:
+persistência de melhor esforço, não transação distribuída nem garantia de entrega.
+Consulte [compatibilidade e operação](atualizacao-015.md).
+
 ## Aparência
 
 O botão sol/lua escolhe tema claro ou escuro. A preferência fica apenas no navegador; na primeira visita, segue a configuração do sistema. A troca não altera o estado da porta nem depende da API.

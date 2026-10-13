@@ -6,6 +6,13 @@
   const pages = Array.from(main.querySelectorAll(":scope > section[id]"));
   const pageIds = new Set(pages.map((page) => page.id));
   let sessionReady = false;
+  const toggle = document.getElementById("nav-toggle");
+  function closeMenu() { document.body.classList.remove("menu-open"); toggle.setAttribute("aria-expanded", "false"); }
+  toggle.addEventListener("click", () => {
+    const open = document.body.classList.toggle("menu-open");
+    toggle.setAttribute("aria-expanded", String(open));
+  });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape" && document.body.classList.contains("menu-open")) { closeMenu(); toggle.focus(); } });
 
   function pageFromHash() {
     const id = location.hash.slice(1);
@@ -35,6 +42,11 @@
     breadcrumb.textContent = label;
     document.title = `EverLock · ${label}`;
     window.scrollTo({ top: 0, behavior: "instant" });
+    closeMenu();
+    if (sessionReady && !main.hidden) {
+      const heading = activePage.querySelector("h1, h2");
+      heading?.setAttribute("tabindex", "-1"); heading?.focus({ preventScroll: true });
+    }
   }
 
   window.addEventListener("hashchange", renderPage);

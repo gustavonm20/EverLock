@@ -90,7 +90,7 @@ O software funciona sem o nobreak e não exige hospedagem ou assinatura paga. A 
 
 ## Dados e configuração
 
-Administradores podem abrir **Diagnóstico** para consultar versão e componentes
+Administradores podem abrir **Configuração** para consultar versão e componentes
 locais, com o horário e os limites de cada verificação. A página não abre câmera nem
 envia mensagens de teste. Veja [o guia](docs/diagnostico.md).
 
@@ -138,6 +138,8 @@ Os testes cobrem porta, energia, relógio, migração, recuperação, autentica�
 - [Diagnóstico local](docs/diagnostico.md)
 - [Testes de interface no navegador](docs/testes-interface.md)
 - [Regras de colaboração no projeto](AGENTS.md)
+- [Skills do EverLock: instalação e uso](docs/skills.md)
+- [Atualização 0.15 e compatibilidade](docs/atualizacao-015.md)
 - [Identidades, consentimento e reconhecimento simulado](docs/identities.md)
 - [Reconhecimento facial e limites](docs/facial-recognition.md)
 - [Avaliação facial local](docs/avaliacao-facial.md)

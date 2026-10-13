@@ -10,6 +10,7 @@ from everlock.app import PROJECT_DIR
 from everlock.backup import BackupError, create_backup, restore_backup
 from everlock.config import load_env_file
 from everlock.mailer import Mailer
+from everlock.observability import configure_logging
 
 
 def data_dir() -> Path:
@@ -39,6 +40,7 @@ def run_restore(args) -> None:
 
 
 def serve() -> None:
+    configure_logging(data_dir() / "logs")
     port = int(os.getenv("EVERLOCK_PORT", "8000"))
     if not 1 <= port <= 65535:
         raise ValueError("EVERLOCK_PORT deve estar entre 1 e 65535.")

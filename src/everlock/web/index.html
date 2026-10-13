@@ -51,21 +51,24 @@
       <a class="brand" href="#simulador" aria-label="EverLock, início">
         <img class="brand-logo" src="/static/logo-everlock.png?v=3" alt="EverLock" width="180" height="120">
       </a>
-      <div class="sidebar-section-label">ESPAÇO DE TRABALHO</div>
-      <nav class="navigation">
-        <a class="nav-link active" href="#simulador" aria-current="location"><svg class="icon"><use href="#icon-door"/></svg>Simulador</a>
-        <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Status Nobreak</a>
-        <a class="nav-link" href="#comunicacao"><svg class="icon"><use href="#icon-network"/></svg>Conexão</a>
-        <a class="nav-link" href="#identidades" data-admin><svg class="icon"><use href="#icon-face"/></svg>Identidades</a>
+      <button class="button button-quiet nav-toggle" type="button" id="nav-toggle" aria-expanded="false" aria-controls="navigation">Menu</button>
+      <nav class="navigation" id="navigation">
+        <span class="nav-group-label">OPERAÇÃO</span>
+        <a class="nav-link active" href="#simulador" aria-current="page"><svg class="icon"><use href="#icon-door"/></svg>Visão geral</a>
         <a class="nav-link" href="#atividade" data-admin><svg class="icon"><use href="#icon-activity"/></svg>Atividade</a>
-        <a class="nav-link" href="#diagnostico" data-admin><svg class="icon"><use href="#icon-info"/></svg>Diagnóstico</a>
+        <span class="nav-group-label">ADMINISTRAÇÃO</span>
+        <a class="nav-link" href="#identidades" data-admin><svg class="icon"><use href="#icon-face"/></svg>Identidades</a>
         <a class="nav-link" href="#contas"><svg class="icon"><use href="#icon-users"/></svg>Conta</a>
-        <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Etapas</a>
+        <a class="nav-link" href="#diagnostico" data-admin><svg class="icon"><use href="#icon-info"/></svg>Configuração</a>
+        <span class="nav-group-label">LABORATÓRIO</span>
+        <a class="nav-link" href="#energia"><svg class="icon"><use href="#icon-battery"/></svg>Energia e nobreak</a>
+        <a class="nav-link" href="#comunicacao"><svg class="icon"><use href="#icon-network"/></svg>Conexão</a>
+        <a class="nav-link" href="#evolucao"><svg class="icon"><use href="#icon-grid"/></svg>Guia de demonstração</a>
       </nav>
       <div class="sidebar-bottom">
         <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.14.0</span></span>
+        <span class="version">Versão <span id="version">0.15.0</span></span>
       </div>
     </aside>
 
@@ -235,8 +238,8 @@
         </section>
 
         <section class="identity-card" id="identidades" aria-labelledby="identity-title" data-admin>
-          <div class="section-heading"><div><p class="eyebrow">CONSENTIMENTO E CADASTRO</p><h2 id="identity-title">Identidades</h2></div><span class="subtle-badge">Cadastro simulado</span></div>
-          <p class="section-description">Identidades biométricas ficam separadas das contas de acesso. Nesta etapa nenhuma imagem, vetor ou modelo facial é coletado e a câmera não é ativada: o cadastro é um marcador simulado e os testes usam resultados preparados. Use um apelido ou código, não o nome completo.</p>
+          <div class="section-heading"><div><p class="eyebrow">CONSENTIMENTO E CADASTRO</p><h2 id="identity-title">Identidades</h2></div><span class="subtle-badge">Dados locais</span></div>
+          <p class="section-description">Identidades ficam separadas das contas. O cadastro simulado não coleta biometria. Pela câmera, as imagens são analisadas em memória e descartadas; vetores do rosto ficam cifrados neste computador até revogação, exclusão ou fim da retenção. Use um apelido ou código.</p>
           <div class="identity-consent">
             <strong>Termo de consentimento <span id="consent-version"></span></strong>
             <p id="consent-text">Carregando o termo…</p>
@@ -256,15 +259,18 @@
             <label class="identity-wide identity-check"><input type="checkbox" name="consent" required>Confirmo que a pessoa foi informada e concordou com o termo acima.</label>
             <button class="button button-primary identity-wide" type="submit" id="identity-submit">Cadastrar identidade</button>
           </form>
-          <p class="action-feedback" id="identity-message" role="status" aria-live="polite" aria-atomic="true">Cadastre uma identidade para começar. Nenhum dado biométrico será guardado.</p>
+          <p class="action-feedback" id="identity-message" role="status" aria-live="polite" aria-atomic="true">Criar a identidade não coleta o rosto. A captura facial exige um aceite separado.</p>
           <h3 class="identity-list-heading">Identidades cadastradas</h3>
           <div id="identity-list" class="identity-list" aria-busy="true"><p class="empty-state">Carregando identidades…</p></div>
           <div class="face-capture" id="face-enroll-panel" hidden>
             <h3 id="face-enroll-title">Cadastro facial pela câmera</h3>
-            <p class="identity-hint" id="face-enroll-help">O navegador vai pedir permissão para usar a câmera. Serão tiradas 5 fotos em poucos segundos; elas são analisadas na memória e descartadas, e só o vetor numérico do rosto é guardado, cifrado.</p>
+            <p class="identity-hint" id="face-enroll-help">Entregue o controle da tela à pessoa antes do aceite. O sistema registra uma declaração presencial, não verifica quem clicou. Recusar não impede o acesso manual de demonstração. Cadastrar o rosto nunca libera a trava.</p>
+            <p id="face-subject-text"></p><p id="face-subject-retention"></p>
+            <label class="identity-check"><input type="checkbox" id="face-subject-consent">Sou a pessoa que será cadastrada, li o termo e concordo com o uso local dos meus vetores faciais para estes testes. Posso pedir revogação ou exclusão ao administrador.</label>
+            <button type="button" class="button button-secondary" id="face-enroll-prepare" disabled>Concordo e ligar câmera</button>
             <video id="face-enroll-video" class="face-video" playsinline muted></video>
             <p class="action-feedback" id="face-enroll-step" role="status" aria-live="polite" aria-atomic="true"></p>
-            <div class="identity-actions"><button type="button" class="button button-primary" id="face-enroll-start">Iniciar captura</button><button type="button" class="button button-quiet" id="face-enroll-cancel">Fechar</button></div>
+            <div class="identity-actions"><button type="button" class="button button-primary" id="face-enroll-start" disabled>Iniciar captura</button><button type="button" class="button button-quiet" id="face-enroll-cancel">Cancelar e fechar câmera</button></div>
           </div>
           <div class="identity-tests">
             <button class="button button-quiet" type="button" id="simulate-unknown">Simular rosto desconhecido</button>
@@ -286,6 +292,7 @@
             <p class="action-feedback" id="history-note" role="status" aria-live="polite"></p>
           </form>
           <div id="events" class="events-list" aria-busy="true"><div class="empty-state">Carregando o histórico…</div></div>
+          <div class="identity-actions"><button class="button button-secondary" id="history-refresh" type="button">Atualizar</button><button class="button button-quiet" id="history-more" type="button" hidden>Carregar mais</button></div>
           <div class="history-footer"><svg class="icon"><use href="#icon-check"/></svg>Histórico salvo neste computador.</div>
           <div class="notify-box" id="notify-box">
             <h3>Notificações (n8n)</h3>
@@ -312,6 +319,16 @@
           </dl>
           <p class="diagnostics-message" id="diagnostics-message" role="status" aria-live="polite" aria-atomic="true"></p>
           <div class="diagnostics-grid" id="diagnostics-checks" aria-busy="false"></div>
+          <section class="setup-guide" aria-labelledby="setup-guide-title">
+            <h3 id="setup-guide-title">Primeiros passos nesta instalação</h3>
+            <ol>
+              <li><strong>Contas e permissões.</strong> Confira quem administra o laboratório em <a href="#contas">Sua conta</a>. Use senhas individuais.</li>
+              <li><strong>Reconhecimento local.</strong> O <code>.\iniciar.cmd</code> prepara o ambiente e tenta baixar os modelos. Para repetir apenas o download, execute <code>.\.venv\Scripts\python.exe scripts\baixar_modelos.py</code> no terminal do projeto. Ter modelos não comprova precisão.</li>
+              <li><strong>Consentimento e câmera.</strong> Crie uma <a href="#identidades">identidade</a>, leia o termo com a pessoa e só então inicie a captura. A autorização do navegador é separada do aceite.</li>
+              <li><strong>Cópia de segurança.</strong> Execute <code>.\.venv\Scripts\python.exe -m everlock backup --senha</code>. Guarde a senha separadamente e ensaie a restauração em uma pasta de teste. O diagnóstico não comprova a recuperação.</li>
+              <li><strong>Serviços opcionais.</strong> Configure e-mail e webhook no arquivo local <code>everlock.env</code>, sem publicá-lo. Teste notificações em <a href="#atividade">Atividade</a>. O projeto funciona sem n8n.</li>
+            </ol>
+          </section>
         </section>
 
         <section class="account-section" id="contas" aria-labelledby="account-title">
@@ -361,6 +378,13 @@
         <section id="evolucao" class="roadmap" aria-labelledby="roadmap-title">
           <div class="section-heading"><div><p class="eyebrow">CONSTRUÍDO EM ETAPAS</p><h2 id="roadmap-title">A base de algo maior.</h2></div><span class="subtle-badge">Em desenvolvimento</span></div>
           <p class="section-description">Porta, energia, contas, comunicação e reconhecimento local com consentimento estão disponíveis. A validação com imagens autorizadas ainda depende do grupo.</p>
+          <section class="setup-guide" aria-labelledby="demo-guide-title">
+            <h3 id="demo-guide-title">Roteiro guiado, sem ações automáticas</h3>
+            <p>Use dados fictícios e execute cada ação conscientemente. Estes cenários não medem segurança física nem reconhecimento real.</p>
+            <details><summary>1. Liberação e entrada são ações diferentes</summary><ol><li>Em <a href="#identidades">Identidades</a>, registre um cadastro simulado.</li><li>Na <a href="#simulador">Visão geral</a>, simule reconhecimento: a trava libera, mas a porta continua fechada.</li><li>Use Abrir / entrar antes de a liberação terminar. Feche a porta e confira a trava engatada.</li><li>Confira os registros em <a href="#atividade">Atividade</a>.</li></ol></details>
+            <details><summary>2. Falha virtual não elimina a saída manual</summary><ol><li>Em <a href="#energia">Energia</a>, abra o laboratório virtual e prepare um cenário pausado.</li><li>Corte a alimentação virtual e avance até o desligamento.</li><li>Na Visão geral, confirme que a saída interna e a chave simuladas continuam disponíveis.</li><li>Restaure a alimentação e avance a recuperação. Nenhuma liberação anterior deve se repetir.</li></ol></details>
+            <details><summary>3. Consentimento revogado bloqueia novos acessos</summary><ol><li>Use uma identidade fictícia com cadastro simulado.</li><li>Revogue o consentimento em <a href="#identidades">Identidades</a>.</li><li>Confira a remoção do cadastro e o bloqueio de reconhecimento para aquela identidade.</li><li>Confira a auditoria pelo número da identidade, sem o apelido.</li></ol></details>
+          </section>
           <div class="roadmap-grid">
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-battery"/></svg></span><h3>Energia de emergência</h3><p>Consumo, recarga e falhas de energia em uma bateria virtual.</p><span class="future-label">Disponível no laboratório</span></article>
             <article class="roadmap-item"><span class="roadmap-icon"><svg class="icon"><use href="#icon-users"/></svg></span><h3>Pessoas e permissões</h3><p>Contas, autorizações e gerenciamento de quem pode entrar.</p><span class="future-label">Disponível no laboratório</span></article>

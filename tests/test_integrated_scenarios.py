@@ -40,6 +40,9 @@ def enroll(client, person):
     })
     assert created.status_code == 201, created.text
     identity = created.json()
+    assert client.post(f"/api/identities/{identity['id']}/consent/confirm", json={
+        "accepted": True, "version": CONSENT_VERSION,
+    }).status_code == 200
     registered = client.post(f"/api/identities/{identity['id']}/face", json={
         "images": [synthetic_capture(person, number) for number in range(3)],
     })

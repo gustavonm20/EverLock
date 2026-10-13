@@ -121,45 +121,6 @@ class Identities:
         self.db, self.mutex, self.clock, self.vault = connection, mutex, clock, vault
         self.biometrics_enabled = False  # a aplicação liga quando motor e cofre existem
         self.notifier = None  # a aplicação liga
-        self.db.executescript("""
-            CREATE TABLE IF NOT EXISTS identities (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                label TEXT NOT NULL,
-                active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0, 1)),
-                consent_version TEXT NOT NULL,
-                consent_recorded_by TEXT NOT NULL,
-                consent_granted_at REAL NOT NULL,
-                consent_revoked_at REAL,
-                retention_days INTEGER NOT NULL,
-                enrollment TEXT NOT NULL DEFAULT 'none'
-                    CHECK(enrollment IN ('none', 'simulated')),
-                enrolled_at REAL,
-                days TEXT NOT NULL,
-                window_start INTEGER NOT NULL,
-                window_end INTEGER NOT NULL,
-                created_by TEXT NOT NULL,
-                created_at REAL NOT NULL
-            );
-            CREATE UNIQUE INDEX IF NOT EXISTS identity_label ON identities(lower(label));
-            CREATE TABLE IF NOT EXISTS identity_events (
-                id INTEGER PRIMARY KEY, type TEXT NOT NULL, actor TEXT,
-                identity_id INTEGER, detail TEXT NOT NULL, created_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS face_templates (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                identity_id INTEGER NOT NULL,
-                sealed BLOB NOT NULL,
-                model TEXT NOT NULL,
-                created_at REAL NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS face_template_owner ON face_templates(identity_id);
-        """)
-        columns = {row["name"] for row in self.db.execute("PRAGMA table_info(identities)")}
-        if "face_samples" not in columns:
-            with self.db:
-                self.db.execute(
-                    "ALTER TABLE identities ADD COLUMN face_samples INTEGER NOT NULL DEFAULT 0"
-                )
         self.purge_expired()
 
     def audit(self, kind, actor, identity_id, detail):
@@ -221,6 +182,8 @@ class Identities:
             "consent": {
                 "version": row["consent_version"], "recorded_by": row["consent_recorded_by"],
                 "granted_at": row["consent_granted_at"], "revoked_at": row["consent_revoked_at"],
+                "subject_confirmed_at": row["subject_consent_at"],
+                "subject_version": row["subject_consent_version"],
             },
             "retention_days": row["retention_days"],
             "expires_at": row["consent_granted_at"] + row["retention_days"] * SECONDS_PER_DAY,
@@ -354,9 +317,40 @@ class Identities:
                            f"Identidade #{identity_id} excluída: apelido, consentimento, "
                            "cadastro e horários foram removidos.")
 
+    def confirm_subject_consent(self, identity_id, version, actor):
+        """Declaração presencial; não é verificação independente de quem clicou."""
+        with self.mutex:
+            self.purge_expired()
+            row = self._row(identity_id)
+            if row["consent_revoked_at"] is not None:
+                raise HTTPException(409, "O consentimento foi revogado.")
+            if version != CONSENT_VERSION or row["consent_version"] != CONSENT_VERSION:
+                raise HTTPException(409, "Recarregue o termo atual e confirme novamente.")
+            with self.db:
+                self.db.execute(
+                    "UPDATE identities SET subject_consent_at=?, subject_consent_version=? "
+                    "WHERE id=?", (self.clock(), version, identity_id),
+                )
+                self.audit("subject_consent_declared", actor, identity_id,
+                           f"Identidade #{identity_id}: aceite presencial declarado do termo "
+                           f"{version}; sem verificação independente do titular.")
+            return self._public(self._row(identity_id), self.clock())
+
+    def require_subject_consent(self, identity_id):
+        self.purge_expired()
+        row = self._row(identity_id)
+        if row["consent_revoked_at"] is not None:
+            raise HTTPException(409, "O consentimento foi revogado; não é possível cadastrar.")
+        if (row["consent_version"] != CONSENT_VERSION
+                or row["subject_consent_version"] != CONSENT_VERSION
+                or row["subject_consent_at"] is None):
+            raise HTTPException(409, "A pessoa precisa ler e confirmar o termo atual "
+                                     "antes da captura facial.")
+
     def enroll_face(self, identity_id, vectors, model, actor):
         """Guarda os vetores faciais (cifrados), substituindo os anteriores. Sem imagens."""
         with self.mutex:
+            self.require_subject_consent(identity_id)
             self.purge_expired()
             row = self._row(identity_id)
             if self.vault is None or not self.vault.available:

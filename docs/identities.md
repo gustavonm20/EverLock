@@ -27,6 +27,16 @@ O texto e a versão atual (`2026-10-01`) vêm de `GET /api/identities/policy`. P
 - **Revogar** (`POST /api/identities/{id}/consent/revoke`) apaga o marcador simulado e os vetores faciais e bloqueia novas liberações. A identidade fica marcada como revogada, não pode ser reativada nem receber novo cadastro e só pode ser excluída. Para voltar a participar, é preciso excluir e cadastrar de novo, com novo consentimento.
 - **Excluir** (`DELETE /api/identities/{id}`) remove apelido, consentimento, cadastro e horários.
 
+Desde a versão 0.15, antes de abrir a câmera para cadastrar ou substituir o rosto,
+a interface apresenta o termo e o prazo para a pessoa confirmar sua concordância.
+`POST /api/identities/{id}/consent/confirm` registra a declaração com data e versão,
+e o servidor a exige antes de analisar as fotos. O endpoint continua autenticado
+como administrador: isso **não comprova de forma independente** quem confirmou.
+A confirmação não prolonga a retenção, não cadastra o rosto nem libera a trava.
+Vetores anteriores são preservados; não há validação retroativa do consentimento
+nem bloqueio adicional de seu reconhecimento. O aceite pessoal real continua
+pendente. Veja [compatibilidade da atualização](atualizacao-015.md).
+
 ## Retenção
 
 Cada identidade nasce com um prazo de 1 a 365 dias (padrão: 30), contado a partir do consentimento. Ao vencer, ela é **excluída por completo**, não apenas bloqueada. A verificação ocorre ao iniciar o servidor e em cada consulta, cadastro ou teste. O prazo não muda depois do cadastro, pois alteraria os termos aceitos.
