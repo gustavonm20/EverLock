@@ -1,6 +1,6 @@
 # Estado do projeto
 
-Versão atual: **0.13.0**. A retomada reúne os incrementos 0.5 a 0.12 enviados no arquivo do projeto, corrige o fluxo facial e prepara avaliação e cenários integrados. A base de contas e energia foi entregue no [PR #14](https://github.com/gustavonm20/EverLock/pull/14); marca e ajustes visuais, no [PR #16](https://github.com/gustavonm20/EverLock/pull/16). As verificações abaixo preservam o histórico de cada entrega e distinguem implementação de validação com pessoas reais.
+Versão atual: **0.14.0**, com diagnóstico local administrativo e testes de interface reproduzíveis. A retomada 0.13 foi integrada à `main` no [PR #20](https://github.com/gustavonm20/EverLock/pull/20). A base de contas e energia foi entregue no [PR #14](https://github.com/gustavonm20/EverLock/pull/14); marca e ajustes visuais, no [PR #16](https://github.com/gustavonm20/EverLock/pull/16). As verificações abaixo preservam o histórico de cada entrega e distinguem implementação de validação com pessoas reais.
 
 ## Entregue e verificado
 
@@ -131,6 +131,18 @@ A suíte completa passou com **149 testes** (33 novos) e o Ruff passou. A interf
 Validação final desta retomada: **271 testes aprovados** em uma execução completa sobre a cópia destinada à publicação, Ruff aprovado e sintaxe dos scripts da interface verificada. Os testes incluem a CLI sem sobrescrever relatórios, medições de latência com relógio controlado e regressões de cancelamento/expiração. Nove cenários de câmera/API simuladas conferiram cancelamento nas duas interfaces; não foi um ensaio visual com câmera real. Permanece somente o aviso do cliente HTTP de testes já acompanhado na [issue #13](https://github.com/gustavonm20/EverLock/issues/13).
 
 A primeira execução no GitHub revelou uma disputa do relógio falso no teste de dois comandos: o avanço podia ocorrer entre as leituras da tarefa de fundo. O teste agora avança o relógio e processa o lote sob a mesma trava, sem alterar o protocolo ou a aplicação. A regressão foi validada de forma focada antes de reenviar o PR.
+
+## Diagnóstico e interface (incremento 0.14, 04/10/2026)
+
+- Nova página administrativa **Diagnóstico**: versão, conexão com o banco, motor facial, biblioteca de cifra, e-mail e notificações. Consulta manual e ao entrar na página, com data da leitura e limite de cada verificação.
+- API `GET /api/diagnostics` somente de leitura, sem abrir câmera, criar chave, enviar mensagens ou testar serviços externos. Mensagens controladas não expõem caminhos, credenciais ou exceções brutas.
+- A interface descarta respostas de páginas/sessões anteriores e remove os resultados ao sair ou perder a sessão. Atualização, erros e estados de carregamento usam os padrões visuais existentes.
+- Quatro testes de navegador isolados, com Playwright opcional de desenvolvimento, executados separadamente da suíte habitual e em um trabalho próprio no CI.
+- `AGENTS.md` registra as regras do projeto, verificação proporcional, preservação de dados e pendências adiadas. A arquitetura local permanece a mesma.
+
+Validação local: **7 testes de diagnóstico aprovados**, incluindo autorização, leitura sem alteração do estado, falhas de componentes e ausência de segredos na resposta. Os **4 testes de navegador passaram no Chrome**; a primeira execução detectou que a espera de um teste violava a política de segurança de conteúdo, e a sincronização foi corrigida sem afrouxar a proteção da aplicação. Ruff, sintaxe JavaScript e revisão independente do código aprovados. A interface foi conferida em computador e celular. O CI executa a suíte geral e a bateria de navegador em trabalhos separados; as execuções vinculadas ao PR registram o resultado da publicação.
+
+Guias: [diagnóstico](diagnostico.md) e [testes de interface](testes-interface.md). Os sete grupos de pendências adiados pelo responsável continuam em aberto.
 
 ## Pendências de aceite e validação
 

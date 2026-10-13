@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "everlock"
-version = "0.13.0"
+version = "0.14.0"
 description = "Simulador local de controle de acesso EverLock"
 requires-python = ">=3.13"
 dependencies = [
@@ -24,6 +24,7 @@ everlock = ["web/*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+norecursedirs = ["browser"]
 
 [tool.ruff]
 target-version = "py313"

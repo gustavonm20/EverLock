@@ -1,0 +1,2 @@
+# Optional development-only dependency. The simulator does not require a browser driver.
+playwright==1.63.0

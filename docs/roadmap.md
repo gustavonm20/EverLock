@@ -22,6 +22,11 @@ A base, porta, energia, tema, contas e permissões estão entregues. O increment
 
 ## Próximo incremento
 
+A melhoria complementar 0.14 reúne o [diagnóstico local](diagnostico.md) e os
+[testes de interface](testes-interface.md). As validações humanas e externas descritas
+abaixo foram adiadas pelo responsável em 03/10/2026; os testes automatizados novos
+não encerram esses aceites.
+
 O incremento 0.13 prepara a [avaliação facial](avaliacao-facial.md) e os [cenários integrados](cenarios-integrados.md). Execute o pipeline já implementado (YuNet, SFace, vetores cifrados e desafio de movimento) com imagens autorizadas distintas para cadastro e avaliação. Ajuste limites somente a partir dessas medições; consentimento da identidade pela própria pessoa segue pendente. Resultados preparados para testes continuam identificados como simulados. O protocolo de comandos e a reconexão sem execução de pedidos antigos estão descritos em [communication.md](communication.md).
 
 A energia virtual usa Wh e parâmetros didáticos explícitos. Seus resultados não representam medições do nobreak. O grupo comprará somente esse equipamento adicional para sustentar o computador; autonomia e compatibilidade serão verificadas com o modelo real. Desligar o computador continua encerrando a aplicação.

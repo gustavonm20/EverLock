@@ -7,6 +7,7 @@ Salvo `/api/health` e as rotas públicas de preparação/cadastro/login/sessão,
 | Método e caminho | Resposta / finalidade |
 |---|---|
 | `GET /api/health` | Identificação, versão, modo `simulation` e disponibilidade da aplicação |
+| `GET /api/diagnostics` | Administrador: consulta somente de leitura dos componentes locais, com data e limites de cada verificação; não envia mensagens nem abre câmera. Veja [diagnóstico](diagnostico.md) |
 | `GET /api/status` | Posição da porta, trava, prazo restante, revisão e recursos implementados |
 | `GET /api/events?limit=20` | Últimos eventos, do mais recente para o mais antigo; limite entre 1 e 100 |
 | `POST /api/actions` | Solicitação de uma ação ao controlador |
