@@ -9,7 +9,7 @@ Salvo `/api/health` e as rotas públicas de preparação/cadastro/login/sessão,
 | `GET /api/health` | Identificação, versão, modo `simulation` e disponibilidade da aplicação |
 | `GET /api/diagnostics` | Administrador: consulta somente de leitura dos componentes locais, com data e limites de cada verificação; não envia mensagens nem abre câmera. Veja [diagnóstico](diagnostico.md) |
 | `GET /api/status` | Posição da porta, trava, prazo restante, revisão e recursos implementados |
-| `GET /api/events?limit=20` | Últimos eventos, do mais recente para o mais antigo; limite entre 1 e 100 |
+| `GET /api/events?limit=20` | Página `{items, next_cursor, has_more}` do mais recente para o mais antigo; limite entre 1 e 100, continuidade por `before_id` |
 | `POST /api/actions` | Solicitação de uma ação ao controlador |
 | `GET /api/communication` | Canal, última observação, idade, indicador de leitura antiga e últimos 20 comandos visíveis |
 | `POST /api/commands` | Novo comando remoto simulado; 202 significa solicitado, sem confirmar atuação |
@@ -24,6 +24,7 @@ Salvo `/api/health` e as rotas públicas de preparação/cadastro/login/sessão,
 | `PATCH /api/identities/{id}` | Administrador: ativar/desativar e/ou trocar a janela de horário |
 | `POST/DELETE /api/identities/{id}/enrollment` | Administrador: registrar / remover o cadastro **simulado** |
 | `POST /api/identities/{id}/consent/revoke` | Administrador: revogar consentimento e apagar o cadastro |
+| `POST /api/identities/{id}/consent/confirm` | Administrador: registrar declaração pessoal com `{accepted: true, version: "2026-10-01"}` antes de novo cadastro facial; não atua nem estende retenção |
 | `DELETE /api/identities/{id}` | Administrador: excluir a identidade por completo |
 | `GET /api/identities/events` | Administrador: últimos 50 eventos de identidades |
 | `GET /api/auth/face/availability` | Público: o motor facial está disponível? (`available`, `reason`) |
@@ -37,8 +38,8 @@ Salvo `/api/health` e as rotas públicas de preparação/cadastro/login/sessão,
 | Ações que exigem sessão com senha | `POST /api/auth/invites`, `POST /api/auth/users` com `role: admin` e `PATCH /api/auth/users/{id}` com `role: admin` respondem 403 `{"code": "password_required"}` se a sessão foi aberta pelo rosto |
 | `POST /api/auth/forgot-password` | Público: `{identifier}` (e-mail ou usuário); sempre 202 com a mesma mensagem; envia o link se houver conta apta (429 após 5 pedidos em 5 min) |
 | `POST /api/auth/reset-password` | Público: `{token, password, confirm_password}`; troca a senha, encerra as sessões e consome o link (400 se inválido ou expirado) |
-| `GET /api/events` | Administrador: histórico da porta e da energia. Filtros opcionais: `outcome`, `source`, `type`, `q` (texto no título, detalhe ou usuário), `since` e `until` (datas `AAAA-MM-DD`, dias locais, inclusive) e `limit` (1 a 100) |
-| `GET /api/events/export.csv` | Administrador: os mesmos filtros, até 5.000 linhas (`limit`), em CSV para o Excel (UTF-8 com BOM, separador `;`, células que começam com `=`, `+`, `-` ou `@` recebem `'` na frente) |
+| `GET /api/events` | Administrador: histórico da porta e da energia. Filtros opcionais: `outcome`, `source`, `type`, `q` (texto no título, detalhe ou usuário), `since` e `until` (datas `AAAA-MM-DD`, dias locais, inclusive), `before_id` (ID exclusivo) e `limit` (1 a 100) |
+| `GET /api/events/export.csv` | Administrador: os mesmos filtros, até 5.000 linhas (`limit`), em CSV para o Excel (UTF-8 com BOM, separador `;`, proteção contra fórmulas). Cabeçalhos `X-EverLock-Has-More`, `X-EverLock-Next-Cursor` e `X-EverLock-Row-Count` indicam continuidade e tamanho da parte |
 | `GET /api/notifications/status` | Administrador: webhook configurado, destino (só host:porta), nível, assinatura, contadores e último erro |
 | `POST /api/notifications/test` | Administrador: enfileira uma notificação de teste (ignora o nível mínimo) |
 | `GET /api/faces/status` | Administrador: motor facial disponível, motivo se não, limites e número de amostras |
@@ -135,6 +136,13 @@ Todas as rotas exigem administrador (401 sem sessão, 403 para usuário comum). 
 ```
 
 `consent` precisa ser `true` e `consent_version` deve ser a de `/api/identities/policy` (senão, 422 ou 409). `days` usa 0 = segunda a 6 = domingo; `end` aceita `24:00`. Campos extras retornam 422. Uma identidade tem `state` (`ready`, `not_enrolled`, `inactive` ou `revoked`), `consent`, `retention_days`, `expires_at`, `schedule` e `access_now` com a decisão atual. Não há imagens, vetores ou modelo na resposta pública da identidade; `face_samples` informa somente a quantidade de amostras.
+
+Na versão 0.15, `consent.subject_confirmed_at` e `consent.subject_version` mostram
+a declaração pessoal registrada pela sessão administrativa. Novo cadastro facial
+exige essa declaração atual e consentimento não revogado/expirado. Não é verificação
+independente do titular; não substitui os aceites humanos. Cadastros anteriores são
+preservados. As respostas HTTP trazem `X-Request-ID`; corpos maiores que 16 MiB são
+recusados com 413 antes de interpretar o JSON.
 
 Na verificação facial real, o servidor não mantém a trava global durante a leitura das imagens. Antes de atuar, revalida sessão, prazo, cancelamento, identidade e regras da porta. Uma tentativa em processamento não pode ser reutilizada; troca de página, aba ou sessão pede o cancelamento pela interface. Capturas recusadas por qualidade não são contadas como falhas de identificação. Todas as amostras aproveitadas no desafio precisam corresponder ao rosto inicial, inclusive as que ainda não atingiram o giro mínimo.
 

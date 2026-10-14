@@ -4,14 +4,13 @@ import os
 import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
-from datetime import date, datetime
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Literal
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -29,12 +28,14 @@ from everlock.energy import PowerConfig
 from everlock.face_auth_api import router as face_auth_router
 from everlock.face_login import FaceLogin
 from everlock.faces import FaceEngine, OpenCVFaceEngine
-from everlock.history import EventFilter, to_csv
+from everlock.history_api import router as history_router
 from everlock.identities import Identities
 from everlock.identity_api import router as identity_router
 from everlock.mailer import Mailer
 from everlock.notifications import Notifier
 from everlock.notifications_api import router as notifications_router
+from everlock.observability import RequestBoundary
+from everlock.outbox import DurableNotifier
 from everlock.recognition import Recognition
 from everlock.storage import Storage
 
@@ -120,7 +121,9 @@ def create_app(
             app.state.accounts = Accounts(storage.connection, app.state.controller.mutex,
                                           session_clock)
             app.state.mailer = mailer or Mailer.from_environment()
-            app.state.notifier = notifier or Notifier.from_environment()
+            app.state.notifier = notifier or DurableNotifier.from_environment(
+                db_path.parent / "notificacoes.sqlite3",
+            )
             app.state.controller.notifier = app.state.notifier
             app.state.accounts.notifier = app.state.notifier
             app.state.communication = Communication(
@@ -199,11 +202,13 @@ def create_app(
         return response
 
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
+    app.add_middleware(RequestBoundary)
     app.include_router(auth_router)
     app.include_router(identity_router)
     app.include_router(face_auth_router)
     app.include_router(notifications_router)
     app.include_router(diagnostics_router)
+    app.include_router(history_router)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, error: RequestValidationError):
@@ -220,37 +225,6 @@ def create_app(
     def status(request: Request):
         with authorized(request):
             return request.app.state.controller.status()
-
-    def event_filter(
-        outcome: Annotated[str | None, Query(pattern=r"^[a-z_]{1,16}$")] = None,
-        source: Annotated[str | None, Query(pattern=r"^[a-z_]{1,32}$")] = None,
-        type_: Annotated[str | None, Query(alias="type", pattern=r"^[a-z_]{1,48}$")] = None,
-        q: Annotated[str | None, Query(min_length=1, max_length=80)] = None,
-        since: Annotated[date | None, Query()] = None,
-        until: Annotated[date | None, Query()] = None,
-    ) -> EventFilter:
-        if since and until and since > until:
-            raise HTTPException(422, "A data inicial vem depois da data final.")
-        return EventFilter(outcome, source, type_, q.strip() if q and q.strip() else None,
-                           since, until)
-
-    Filters = Annotated[EventFilter, Depends(event_filter)]
-
-    @app.get("/api/events")
-    def events(request: Request, filters: Filters,
-               limit: Annotated[int, Query(ge=1, le=100)] = 20):
-        with authorized(request, admin=True):
-            return {"items": request.app.state.controller.search_events(limit, filters)}
-
-    @app.get("/api/events/export.csv")
-    def export_events(request: Request, filters: Filters,
-                      limit: Annotated[int, Query(ge=1, le=5000)] = 1000):
-        with authorized(request, admin=True):
-            rows = request.app.state.controller.search_events(limit, filters)
-        name = f"everlock-historico-{datetime.now():%Y%m%d-%H%M%S}.csv"
-        return Response(to_csv(rows), media_type="text/csv; charset=utf-8", headers={
-            "Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store",
-        })
 
     @app.get("/api/ups")
     def real_ups(request: Request):

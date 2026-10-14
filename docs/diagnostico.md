@@ -1,6 +1,6 @@
 # Diagnóstico local
 
-Entre como administrador e abra **Diagnóstico** no menu. A página reúne seis
+Entre como administrador e abra **Configuração** no menu. O diagnóstico reúne seis
 verificações e mostra quando a consulta foi feita. **Atualizar diagnóstico** consulta
 novamente o servidor; não há atualização automática contínua.
 

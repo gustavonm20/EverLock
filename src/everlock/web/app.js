@@ -16,13 +16,10 @@
   const numberFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
   let configLoaded = false;
   const clockFormat = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dayFormat = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
   let lastState = null;
   let connected = false;
   let actionInProgress = false;
   let polling = false;
-  let lastEventSignature = "";
-  let historyLoaded = false;
   let statusRequestSequence = 0;
   let lastAppliedRequest = 0;
   let sessionGeneration = 0;
@@ -163,7 +160,7 @@
     const remaining = Math.max(0, Number(door.release_remaining_seconds) || 0);
     const remainingLabel = `${remaining.toFixed(1).replace(".", ",")} s`;
 
-      elements.version.textContent = state.version || "0.14.0";
+      elements.version.textContent = state.version || "0.15.0";
     elements["door-position"].textContent = isOpen ? "Aberta" : "Fechada";
     elements["door-hint"].textContent = isOpen ? "Feche para concluir o acesso" : "Posição confirmada no simulador";
     elements["lock-position"].textContent = released ? "Liberada" : pending ? "Aguardando" : "Engatada";
@@ -197,87 +194,6 @@
         lastAppliedRequest = sequence;
         setConnection(false);
       }
-    }
-  }
-
-  function createIcon(name) {
-    const namespace = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(namespace, "svg");
-    svg.setAttribute("class", "icon");
-    svg.setAttribute("aria-hidden", "true");
-    const use = document.createElementNS(namespace, "use");
-    use.setAttribute("href", `#icon-${name}`);
-    svg.append(use);
-    return svg;
-  }
-
-  function renderEvents(items) {
-    const fragment = document.createDocumentFragment();
-    if (!items.length) {
-      const empty = document.createElement("div");
-      empty.className = "empty-state";
-      empty.textContent = "O histórico começa com a primeira ação. Experimente liberar a entrada.";
-      fragment.append(empty);
-    }
-    for (const event of items) {
-      const row = document.createElement("article");
-      row.className = "event-item";
-      row.dataset.outcome = event.outcome;
-      const icon = document.createElement("span");
-      icon.className = "event-icon";
-      icon.append(createIcon(event.outcome === "denied" ? "info" : event.outcome === "success" ? "check" : "activity"));
-      const copy = document.createElement("div");
-      copy.className = "event-copy";
-      const title = document.createElement("h3");
-      title.textContent = event.title;
-      const detail = document.createElement("p");
-      detail.textContent = `${event.actor ? `${event.actor}: ` : ""}${event.detail}`;
-      copy.append(title, detail);
-      const time = document.createElement("time");
-      time.className = "event-time";
-      time.dateTime = event.created_at;
-      time.textContent = formatTime(event.created_at);
-      const date = new Date(event.created_at);
-      const day = document.createElement("small");
-      day.textContent = Number.isNaN(date.getTime()) ? "" : dayFormat.format(date);
-      time.append(day);
-      if (typeof event.simulated_at === "number") {
-        const virtual = document.createElement("small");
-        virtual.textContent = `Virtual: ${duration(event.simulated_at)}`;
-        time.append(virtual);
-      }
-      row.append(icon, copy, time);
-      fragment.append(row);
-    }
-    elements.events.replaceChildren(fragment);
-  }
-
-  document.addEventListener("everlock-history-filter", () => { historyLoaded = false; updateEvents(); });
-
-  async function updateEvents() {
-    if (document.body.dataset.role !== "admin") return;
-    try {
-      const { response, body } = await request(`/api/events?limit=20${elements.events.dataset.query || ""}`);
-      if (!response.ok || !Array.isArray(body.items)) throw new Error("Events unavailable");
-      const signature = JSON.stringify(body.items);
-      if (!historyLoaded || signature !== lastEventSignature) {
-        renderEvents(body.items);
-        lastEventSignature = signature;
-      }
-      historyLoaded = true;
-      const filtered = Boolean(elements.events.dataset.query);
-      elements["event-count"].textContent = body.items.length === 1 ? (filtered ? "1 evento filtrado" : "1 evento recente") : `${body.items.length} ${filtered ? "eventos filtrados" : "eventos recentes"}`;
-    } catch {
-      elements["event-count"].textContent = "Histórico indisponível";
-      if (!historyLoaded) {
-        elements.events.replaceChildren();
-        const message = document.createElement("div");
-        message.className = "empty-state";
-        message.textContent = "O histórico será exibido quando a conexão estiver disponível.";
-        elements.events.append(message);
-      }
-    } finally {
-      elements.events.setAttribute("aria-busy", "false");
     }
   }
 
@@ -317,7 +233,7 @@
       button.classList.remove("is-busy");
       button.removeAttribute("aria-busy");
       refreshButtons();
-      await Promise.allSettled([updateStatus(), updateEvents()]);
+      await updateStatus();
     }
   }
 
@@ -325,7 +241,7 @@
     if (polling || actionInProgress || !document.body.dataset.role) return;
     polling = true;
     try {
-      await Promise.allSettled([updateStatus(), updateEvents()]);
+      await updateStatus();
     } finally {
       polling = false;
     }
@@ -348,21 +264,12 @@
     delete payload.efficiency_percent;
     labAction(document.getElementById("apply-power-config"), "power/config", payload);
   });
-  for (const link of document.querySelectorAll(".nav-link")) {
-    link.addEventListener("click", () => {
-      for (const item of document.querySelectorAll(".nav-link")) {
-        item.classList.toggle("active", item === link);
-        if (item === link) item.setAttribute("aria-current", "location");
-        else item.removeAttribute("aria-current");
-      }
-    });
-  }
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) poll();
   });
   document.addEventListener("everlock-session", () => {
     sessionGeneration += 1;
-    lastState = null; historyLoaded = false; configLoaded = false;
+    lastState = null; configLoaded = false;
     elements.events.replaceChildren();
     setConnection(false);
     poll();

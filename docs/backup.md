@@ -23,3 +23,6 @@ Dê dois cliques em `backup.cmd` (ou, no terminal, `.\.venv\Scripts\python -m ev
 - Não há cópia automática agendada: é preciso rodar o comando.
 - Quem tem o arquivo `.zip` sem senha tem banco e chave. Prefira sempre `--senha`.
 - Restaurar uma cópia antiga **desfaz** contas, cadastros e histórico criados depois dela.
+- A partir de 0.15, logs técnicos e a fila `notificacoes.sqlite3` não entram no
+  backup. Restaurar não limpa uma fila existente: deixe o webhook desativado até
+  conferir pendências da instalação anterior. Essas mensagens são avisos, não comandos.

@@ -94,6 +94,19 @@ Guias: [avaliação facial](avaliacao-facial.md), [cenários integrados](cenario
 
 ## Rotina da equipe
 
+### Melhoria complementar 0.15 — base operacional e uso guiado
+
+Incremento solicitado para banco, backend, interface e segurança: migrações
+centralizadas, histórico paginado/CSV em partes, limite de entrada e registros
+técnicos sem conteúdo sensível, declaração antes da câmera, fila opcional persistente
+e navegação agrupada. Mantém a arquitetura e os sete grupos de aceites humanos
+adiados. Não inclui unificação das auditorias no CSV, operação remota com HTTPS,
+calibração facial nem automação de publicações.
+
+Critérios e limites em [atualizacao-015.md](atualizacao-015.md), evidências em
+[status.md](status.md). As [skills do projeto](skills.md) orientam desenvolvimento,
+revisão e publicação; não são funcionalidades da porta nem permissões permanentes.
+
 ### Melhoria complementar 0.14 — diagnóstico e manutenção
 
 Autorizada após a integração do PR #20. Reúne os sinais já disponíveis em uma página

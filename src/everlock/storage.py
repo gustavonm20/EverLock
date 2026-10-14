@@ -6,6 +6,7 @@ import sqlite3
 from dataclasses import asdict
 from pathlib import Path
 
+from everlock.database import migrate
 from everlock.domain import Door, Event
 from everlock.energy import Power, PowerConfig
 from everlock.simulation import Timeline
@@ -16,53 +17,13 @@ class Storage:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = sqlite3.connect(path, check_same_thread=False, timeout=5)
         self.connection.row_factory = sqlite3.Row
-        self.connection.executescript("""
-            PRAGMA journal_mode=WAL;
-            PRAGMA synchronous=FULL;
-            CREATE TABLE IF NOT EXISTS door_state (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
-                position TEXT NOT NULL CHECK (position IN ('open', 'closed')),
-                revision INTEGER NOT NULL,
-                updated_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                type TEXT NOT NULL,
-                title TEXT NOT NULL,
-                detail TEXT NOT NULL,
-                source TEXT NOT NULL,
-                outcome TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS simulation_state (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
-                power_json TEXT NOT NULL,
-                timeline_json TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS remote_commands (
-                id TEXT PRIMARY KEY, action TEXT NOT NULL, user_id INTEGER NOT NULL,
-                actor TEXT NOT NULL, session_hash TEXT NOT NULL, expected_version TEXT NOT NULL,
-                valid_for_seconds INTEGER NOT NULL, requested_at REAL NOT NULL,
-                expires_at REAL NOT NULL, status TEXT NOT NULL,
-                code TEXT NOT NULL, message TEXT NOT NULL, finished_at REAL
-            );
-            CREATE TABLE IF NOT EXISTS command_transitions (
-                id INTEGER PRIMARY KEY, command_id TEXT NOT NULL,
-                status TEXT NOT NULL, occurred_at REAL NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS command_owner_time
-                ON remote_commands(user_id, requested_at);
-            CREATE TABLE IF NOT EXISTS network_state (
-                id INTEGER PRIMARY KEY CHECK(id=1), internet_available INTEGER NOT NULL,
-                lan_available INTEGER NOT NULL, delay_seconds REAL NOT NULL
-            );
-        """)
-        columns = {row["name"] for row in self.connection.execute("PRAGMA table_info(events)")}
-        if "simulated_at" not in columns:
-            self.connection.execute("ALTER TABLE events ADD COLUMN simulated_at REAL")
-        if "actor" not in columns:
-            self.connection.execute("ALTER TABLE events ADD COLUMN actor TEXT")
-        self.connection.commit()
+        try:
+            migrate(self.connection)
+            self.connection.execute("PRAGMA journal_mode=WAL")
+            self.connection.execute("PRAGMA synchronous=FULL")
+        except Exception:
+            self.connection.close()
+            raise
 
     def load(self) -> Door:
         row = self.connection.execute("SELECT * FROM door_state WHERE id=1").fetchone()

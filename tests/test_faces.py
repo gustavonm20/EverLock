@@ -39,7 +39,11 @@ def create(client, label, **extra):
     body = {"label": label, "consent": True, "consent_version": CONSENT_VERSION, **extra}
     response = client.post("/api/identities", json=body)
     assert response.status_code == 201, response.text
-    return response.json()
+    identity = response.json()
+    assert client.post(f"/api/identities/{identity['id']}/consent/confirm", json={
+        "accepted": True, "version": CONSENT_VERSION,
+    }).status_code == 200
+    return identity
 
 
 def enroll(client, label, person=None, **extra):

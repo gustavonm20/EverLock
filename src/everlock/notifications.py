@@ -59,7 +59,11 @@ def sign(secret: str, timestamp: str, body: bytes) -> str:
 
 def validate_url(url: str) -> str:
     """Devolve "" se a URL serve ou o motivo de não servir."""
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+        _ = parts.port  # Também valida a sintaxe e o intervalo da porta.
+    except ValueError:
+        return "A URL do webhook tem endereço ou porta inválidos."
     if parts.scheme not in {"http", "https"} or not parts.hostname:
         return "A URL do webhook deve começar com http:// ou https://."
     if parts.username or parts.password:

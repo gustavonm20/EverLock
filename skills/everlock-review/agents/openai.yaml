@@ -1,0 +1,4 @@
+interface:
+  display_name: "EverLock: revisar alteração"
+  short_description: "Revise regressões e riscos com evidências"
+  default_prompt: "Use $everlock-review para revisar o diff atual do EverLock sem alterar arquivos."

@@ -98,6 +98,19 @@ class FaceEnrollment(BaseModel):
     images: list[str] = Field(min_length=3, max_length=5)
 
 
+class SubjectConsent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    accepted: bool = Field(strict=True)
+    version: str = Field(min_length=1, max_length=32)
+
+    @field_validator("accepted")
+    @classmethod
+    def accepted_required(cls, value):
+        if value is not True:
+            raise ValueError("O aceite é opcional; sem ele, não inicie a captura facial.")
+        return value
+
+
 class FaceVerification(BaseModel):
     model_config = ConfigDict(extra="forbid")
     challenge_id: str = Field(min_length=10, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
@@ -185,6 +198,15 @@ def revoke_consent(request: Request, identity_id: int = IdentityId):
         return request.app.state.identities.revoke_consent(identity_id, user["username"])
 
 
+@router.post("/identities/{identity_id}/consent/confirm")
+def confirm_subject_consent(payload: SubjectConsent, request: Request,
+                            identity_id: int = IdentityId):
+    with authorized(request, admin=True) as user:
+        return request.app.state.identities.confirm_subject_consent(
+            identity_id, payload.version, user["username"],
+        )
+
+
 @router.delete("/identities/{identity_id}")
 def delete_identity(request: Request, identity_id: int = IdentityId):
     with authorized(request, admin=True) as user:
@@ -195,7 +217,7 @@ def delete_identity(request: Request, identity_id: int = IdentityId):
 @router.post("/identities/{identity_id}/face")
 def enroll_face(payload: FaceEnrollment, request: Request, identity_id: int = IdentityId):
     with authorized(request, admin=True) as user:
-        request.app.state.identities.decide(identity_id)  # 404 se não existir
+        request.app.state.identities.require_subject_consent(identity_id)
         images = [decode_image(item) for item in payload.images]
         try:
             code, body = request.app.state.recognition.enroll_face(

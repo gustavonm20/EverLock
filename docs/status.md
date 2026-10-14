@@ -1,6 +1,6 @@
 # Estado do projeto
 
-Versão atual: **0.14.0**, com diagnóstico local administrativo e testes de interface reproduzíveis. A retomada 0.13 foi integrada à `main` no [PR #20](https://github.com/gustavonm20/EverLock/pull/20). A base de contas e energia foi entregue no [PR #14](https://github.com/gustavonm20/EverLock/pull/14); marca e ajustes visuais, no [PR #16](https://github.com/gustavonm20/EverLock/pull/16). As verificações abaixo preservam o histórico de cada entrega e distinguem implementação de validação com pessoas reais.
+Versão atual do código: **0.15.0**, com migrações versionadas, histórico paginado, proteção das requisições, avisos persistentes e melhorias de navegação e cadastro facial. A entrega 0.14 foi integrada à `main` no [PR #21](https://github.com/gustavonm20/EverLock/pull/21), em 13/10/2026; a retomada 0.13, no [PR #20](https://github.com/gustavonm20/EverLock/pull/20). A base de contas e energia foi entregue no [PR #14](https://github.com/gustavonm20/EverLock/pull/14); marca e ajustes visuais, no [PR #16](https://github.com/gustavonm20/EverLock/pull/16). As verificações abaixo preservam o histórico de cada entrega e distinguem implementação de validação com pessoas reais. A publicação da 0.15 é acompanhada pelo PR e por seus resultados de CI, sem antecipar aprovação ou integração.
 
 ## Entregue e verificado
 
@@ -143,6 +143,27 @@ A primeira execução no GitHub revelou uma disputa do relógio falso no teste d
 Validação local: **7 testes de diagnóstico aprovados**, incluindo autorização, leitura sem alteração do estado, falhas de componentes e ausência de segredos na resposta. Os **4 testes de navegador passaram no Chrome**; a primeira execução detectou que a espera de um teste violava a política de segurança de conteúdo, e a sincronização foi corrigida sem afrouxar a proteção da aplicação. Ruff, sintaxe JavaScript e revisão independente do código aprovados. A interface foi conferida em computador e celular. O CI executa a suíte geral e a bateria de navegador em trabalhos separados; as execuções vinculadas ao PR registram o resultado da publicação.
 
 Guias: [diagnóstico](diagnostico.md) e [testes de interface](testes-interface.md). Os sete grupos de pendências adiados pelo responsável continuam em aberto.
+
+## Base operacional e navegação (incremento 0.15, 13/10/2026)
+
+- Migrações centralizadas e transacionais com versão de esquema; preservação de contas e registros anteriores e recusa de bancos com versão futura.
+- API de histórico separada e tipada, paginação estável por cursor e CSV em partes explícitas de até 5.000 linhas. A interface permite carregar mais registros e consultar detalhes, sem consulta duplicada em segundo plano.
+- Limite de 16 MiB por requisição antes da análise do conteúdo. Identificador de requisição e logs técnicos rotativos sem corpo, parâmetros, IP, credenciais ou dados biométricos.
+- Fila opcional de notificações em SQLite separado, com retenção de 24 horas, capacidade de 100, tentativas persistentes e vínculo ao destino configurado. Payload externo restrito a metadados; persistência de melhor esforço, não garantia de entrega nem transação com a porta.
+- Confirmação declarada do titular antes de novos cadastros faciais, com termo e retenção visíveis. Não é comprovação independente da pessoa, não prolonga retenção, não altera vetores anteriores e nunca libera a trava.
+- Menu organizado por operação, administração e laboratório, navegação por teclado e menu móvel. **Configuração** reúne diagnóstico e preparação; o guia de demonstração mantém ações manuais.
+- Skills `everlock-feature`, `everlock-review` e `everlock-release` versionadas com [guia de uso](skills.md). Elas orientam o trabalho no Codex, não são dependências da aplicação.
+
+Verificado localmente: **300 testes gerais** e **8 jornadas de navegador** aprovados, Ruff e sintaxe JavaScript aprovados. Interface conferida em 1440 px e 390 px, incluindo temas claro/escuro, teclado, paginação e cancelamento do cadastro com câmera sintética. Os testes usam bancos isolados; nenhum banco pessoal foi migrado para validar esta entrega. Permanece o aviso de descontinuação do cliente HTTP de testes acompanhado na [issue #13](https://github.com/gustavonm20/EverLock/issues/13).
+
+Esses resultados não medem precisão biométrica, prova de vida, câmera real, continuidade elétrica ou entrega real de e-mail/webhook. Os sete grupos de [pendências adiadas](pendencias.md) continuam abertos. Consulte o [guia de atualização e compatibilidade](atualizacao-015.md) antes de atualizar uma instalação com dados.
+
+O primeiro CI da 0.15 aprovou a suíte geral e revelou uma disputa de tempo no teste
+de sessão expirada da interface: outro painel podia detectar a expiração antes do
+clique em Atualizar diagnóstico. O teste passou a expirar a sessão ao interceptar
+a requisição já iniciada pelo clique e a encaminhá-la ao endpoint real, que deve
+responder 401. As quatro jornadas de diagnóstico passaram novamente no Chrome
+após o ajuste. A aplicação e suas proteções não foram alteradas por essa correção.
 
 ## Pendências de aceite e validação
 

@@ -164,3 +164,24 @@ A decisão de 28/09/2026 substitui a preparação anterior de telemetria. O apli
 - **Mesmo rosto nas duas fases:** o vetor da foto virada precisa continuar compatível com a identidade encontrada na foto de frente.
 - **Sem promessa de prova de vida:** foto parada é recusada, mas vídeo ou foto movimentada ainda podem passar. A função continua restrita à porta virtual e precisa ser calibrada com a câmera real.
 - **Modo simulado preservado:** testes preparados continuam separados e não fingem ter verificado movimento ou presença real.
+
+## 24. Base operacional 0.15 sem trocar a arquitetura
+
+A melhoria solicitada mantém o monólito modular local, sem ORM, serviço de banco
+remoto ou framework de frontend novo. Migrações versionadas e atômicas substituem
+DDL espalhado; índices e cursor por ID evitam paginação instável por deslocamento.
+Não se presume ganho de desempenho medido sem benchmark.
+
+A decisão 18 é atualizada: o aplicativo usa uma fila persistente de metadados por
+até 24 horas, que rejeita novos avisos quando cheia. A rede continua em segundo
+plano; o registro local é uma gravação curta de melhor esforço. O receptor precisa
+deduplicar IDs. Não é uma outbox transacional do domínio nem garantia de entrega.
+
+Novos cadastros faciais de identidade exigem declaração explícita antes da câmera.
+Ela usa a sessão administrativa, não comprova independentemente quem aceitou e
+não prolonga retenção ou libera a trava. Cadastros existentes são preservados.
+O aceite com as pessoas do grupo segue pendente.
+
+Skills versionadas orientam desenvolvimento, revisão e entrega; conectores não
+recebem autorização permanente de publicar. Figma documenta a interface, Notion
+acompanha evidências e GitHub continua sendo a fonte do código.

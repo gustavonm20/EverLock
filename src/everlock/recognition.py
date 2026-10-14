@@ -181,6 +181,8 @@ class Recognition:
 
     def enroll_face(self, identity_id: int, images: list[bytes], actor: str) -> tuple[int, dict]:
         """Valida as fotos e grava só os vetores. As imagens são descartadas."""
+        with self.controller.mutex:
+            self.identities.require_subject_consent(identity_id)
         self._require_engine()
         vectors, problem = validated_vectors(self.engine, images, self.settings.match_threshold)
         if problem:

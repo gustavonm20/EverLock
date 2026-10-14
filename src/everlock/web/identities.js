@@ -4,7 +4,7 @@
   const byId = (id) => document.getElementById(id);
   const dayNames = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
   const stateLabels = {
-    ready: "Pronta para testes", not_enrolled: "Sem cadastro simulado",
+    ready: "Pronta para testes", not_enrolled: "Sem cadastro facial ou simulado",
     inactive: "Desativada", revoked: "Consentimento revogado",
   };
   const isAdmin = () => document.body.dataset.role === "admin";
@@ -106,13 +106,16 @@
         () => simulate({ scenario: "match", identity_id: item.id }), null,
       ), "button button-primary"));
       actions.append(actionButton("Remover cadastro", () => perform(
-        () => api(`${target}/enrollment`, "DELETE"), "Cadastro simulado removido.",
+        () => api(`${target}/enrollment`, "DELETE"), "Cadastro e vetores faciais removidos.",
       )));
     }
     if (item.state !== "revoked") {
       actions.append(actionButton(item.face_samples ? "Refazer cadastro facial" : "Cadastrar rosto (câmera)", () => {
         if (!item.face_consent_ok) { feedback("Esta identidade aceitou um termo antigo. Exclua-a e cadastre de novo para usar o rosto.", "error"); return; }
-        document.dispatchEvent(new CustomEvent("everlock-face-enroll", { detail: { id: item.id } }));
+        document.dispatchEvent(new CustomEvent("everlock-face-enroll", { detail: {
+          id: item.id, version: policy.version, text: policy.text,
+          expiresAt: item.expires_at, retention: item.retention_days,
+        } }));
       }, item.enrollment === "none" ? "button button-primary" : "button button-quiet"));
     }
     if (item.enrollment === "none" && item.state !== "revoked") {
@@ -125,7 +128,7 @@
         () => api(target, "PATCH", { active: !item.active }), item.active ? "Identidade desativada." : "Identidade ativada.",
       )));
       actions.append(actionButton("Revogar consentimento", () => {
-        if (!window.confirm("Revogar o consentimento apaga o cadastro simulado e bloqueia novos testes. Continuar?")) return;
+        if (!window.confirm("Revogar apaga o cadastro e os vetores faciais, e bloqueia novos testes. Continuar?")) return;
         perform(() => api(`${target}/consent/revoke`, "POST"), "Consentimento revogado e cadastro apagado.");
       }));
     }
@@ -257,11 +260,10 @@
     byId("identity-custom").hidden = true;
     byId("identity-list").replaceChildren();
     byId("identity-history").replaceChildren();
-    feedback("Cadastre uma identidade para começar. Nenhum dado biométrico será guardado.");
+    feedback("Criar a identidade não coleta o rosto. A captura facial exige um aceite separado.");
     load();
   }
 
-  document.addEventListener("everlock-identities-changed", () => load(true));
   document.addEventListener("everlock-identities-changed", () => load(true));
   document.addEventListener("everlock-session", reset);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });

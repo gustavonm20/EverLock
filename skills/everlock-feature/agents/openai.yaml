@@ -1,0 +1,4 @@
+interface:
+  display_name: "EverLock: implementar melhoria"
+  short_description: "Evolua o EverLock sem perder dados e regras"
+  default_prompt: "Use $everlock-feature para implementar a próxima melhoria aprovada no EverLock."

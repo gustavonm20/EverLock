@@ -18,15 +18,18 @@ Corpo da mensagem (`POST`, `application/json`):
 
 ```json
 {
-  "app": "EverLock", "version": "0.13.0", "id": "b0c1…", "type": "recognition_denied",
-  "severity": "warning", "title": "Acesso recusado no reconhecimento facial",
-  "detail": "Identidade #3 reconhecida, mas recusada: Fora da janela de horário permitida.",
-  "source": "recognition", "outcome": "denied", "actor": "admin",
+  "app": "EverLock", "version": "0.15.0", "id": "b0c1…", "type": "recognition_denied",
+  "severity": "warning", "title": "Evento do laboratório",
+  "detail": "Consulte o histórico local.",
+  "source": "recognition", "outcome": "denied", "actor": null,
   "occurred_at": "2026-10-02T14:03:21.123456+00:00"
 }
 ```
 
-**Privacidade:** eventos da porta e de identidades citam só o número (`Identidade #3`), nunca o apelido, e nenhuma imagem ou vetor facial sai do computador. Eventos de conta citam o **nome de usuário**. Use apenas um destino em que você confia.
+**Privacidade na versão 0.15:** a fila e o receptor recebem somente os metadados
+técnicos acima. Nomes de usuário, apelidos, identificadores de identidade e detalhes
+livres não são enviados; imagens e vetores também não. O histórico local preserva
+seus detalhes e continua sendo a fonte de auditoria. Use apenas destino confiável.
 
 ## Configuração
 
@@ -64,8 +67,18 @@ No n8n, ligue **Raw Body** no nó Webhook para ter o corpo exato e calcule o HMA
 
 - **Em segundo plano.** O evento entra numa fila; uma thread entrega. A porta, o login e a API **nunca esperam** o webhook.
 - **Tentativas.** Falhas de rede e respostas 408, 425, 429 e 5xx são repetidas após 1 s, 5 s e 30 s. Outras respostas (404, 401…) indicam erro de configuração e não são repetidas.
-- **Fila de 100.** Se o destino ficar fora do ar e a fila encher, o mais antigo é **descartado** (contado em *descartadas*). Não é uma garantia de entrega: para auditoria, o histórico do EverLock é a fonte oficial.
+- **Fila persistente de 100.** `data/notificacoes.sqlite3` guarda pendências por até
+  24 horas. Se estiver cheia, o novo aviso é recusado e contado em *descartadas*.
+  Reiniciar preserva IDs e orçamento de tentativas, não cria novos avisos do histórico.
 - **Sem redirecionamentos**, para um destino não desviar o envio. Prazo de 5 s por tentativa.
 - **Transporte.** `http` é aceitável para o n8n no mesmo computador ou rede local. Para outro endereço, use `https`: o painel avisa quando o destino é `http` fora de rede privada.
-- Ao reiniciar, mensagens ainda na fila **se perdem**.
+- **Melhor esforço.** A gravação da fila é separada da transação do domínio:
+  falha de disco pode perder um aviso, sem decidir a autorização. Se o receptor
+  receber e o aplicativo encerrar antes de confirmar localmente, pode haver envio
+  duplicado. O receptor deve deduplicar pelo campo `id`, além de validar a assinatura.
+- Ao mudar URL ou segredo, pendências do destino anterior são descartadas; eventos
+  expirados não são reenviados. Contadores de sucesso/falha são da execução atual.
+- O backup do produto não inclui essa fila nem os logs. Restaurar o banco principal
+  não restaura nem limpa uma fila já existente; mantenha o webhook desativado até
+  conferir as pendências locais quando restaurar na mesma pasta de dados.
 - Eventos de segurança já registrados na auditoria antes de a notificação ser ativada não são reenviados.
