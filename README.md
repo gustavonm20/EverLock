@@ -1,4 +1,6 @@
 # EverLock
+
+
 [![CI](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavonm20/EverLock/actions/workflows/ci.yml)
 
 Simulador de controle de acesso desenvolvido em Python. Permite operar uma porta virtual, testar quedas de energia e consultar o histórico de eventos salvo em SQLite.
