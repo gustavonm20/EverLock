@@ -75,10 +75,14 @@ def test_regular_user_cannot_open_admin_diagnostics_even_by_hash(page):
 def test_expired_session_clears_diagnostics_and_returns_to_login(page, local_server):
     login(page)
     open_diagnostics(page)
-    # Keep only background polling stable so that the diagnostic response detects expiry.
-    previous_status = page.request.get("/api/status").json()
-    page.route("**/api/status", lambda route: route.fulfill(json=previous_status))
-    local_server.expire_sessions()
+    # Expire only after the click has issued its request. Background panels also
+    # detect expiry; expiring before the click lets them hide the button first.
+    # Continue to the real endpoint: the asserted 401 is not a mocked response.
+    def expire_before_diagnostics(route):
+        local_server.expire_sessions()
+        route.continue_()
+
+    page.route("**/api/diagnostics", expire_before_diagnostics, times=1)
     with page.expect_response("**/api/diagnostics") as expired:
         page.locator("#diagnostics-refresh").click()
     assert expired.value.status == 401

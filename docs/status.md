@@ -158,6 +158,13 @@ Verificado localmente: **300 testes gerais** e **8 jornadas de navegador** aprov
 
 Esses resultados não medem precisão biométrica, prova de vida, câmera real, continuidade elétrica ou entrega real de e-mail/webhook. Os sete grupos de [pendências adiadas](pendencias.md) continuam abertos. Consulte o [guia de atualização e compatibilidade](atualizacao-015.md) antes de atualizar uma instalação com dados.
 
+O primeiro CI da 0.15 aprovou a suíte geral e revelou uma disputa de tempo no teste
+de sessão expirada da interface: outro painel podia detectar a expiração antes do
+clique em Atualizar diagnóstico. O teste passou a expirar a sessão ao interceptar
+a requisição já iniciada pelo clique e a encaminhá-la ao endpoint real, que deve
+responder 401. As quatro jornadas de diagnóstico passaram novamente no Chrome
+após o ajuste. A aplicação e suas proteções não foram alteradas por essa correção.
+
 ## Pendências de aceite e validação
 
 - Consentimento dado pela própria pessoa (hoje o administrador o registra).
