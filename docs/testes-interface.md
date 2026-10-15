@@ -4,11 +4,12 @@ Esta bateria pequena abre o EverLock de verdade em um navegador sem janela. O ob
 verificar login, permissões e o ciclo de vida do diagnóstico, incluindo uma resposta que
 chega depois de sair da página ou encerrar a sessão.
 
-Os oito testes usam um servidor HTTP em `127.0.0.1`, porta disponível e banco temporário
+Os onze testes usam um servidor HTTP em `127.0.0.1`, porta disponível e banco temporário
 novo por teste. As contas são fictícias. SMTP e webhook são explicitamente desativados e
 o motor facial é substituído por um motor indisponível. O teste de consentimento
-simula a disponibilidade somente na resposta da interface e usa um `MediaStream`
-vazio: não abre dispositivo nem produz imagens pessoais. O navegador também usa um
+simula a disponibilidade somente na resposta da interface e usa vídeo gerado por
+canvas; um cenário sem quadros usa `MediaStream` vazio. Não abrem dispositivo nem
+produzem imagens pessoais. O navegador também usa um
 perfil temporário separado do perfil habitual.
 
 ## Preparar e executar
@@ -62,6 +63,11 @@ deixe essa variável ausente para utilizar o Chromium instalado pelo Playwright.
    seu cursor no novo CSV.
 8. Desmarcar o consentimento enquanto a resposta chega não liga a câmera; o botão
    de preparação fica desativado quando a câmera sintética já está em uso.
+9. Cancelar enquanto a permissão da câmera está pendente permite tentar novamente;
+   o stream antigo é encerrado se chegar depois e não substitui a nova câmera.
+10. Sair da conta durante uma abertura pendente encerra o stream tardio e mantém
+    a câmera fora da tela de login.
+11. Uma câmera sem quadros não libera o botão de captura nem produz uma foto vazia.
 
 Os testes aguardam respostas e estados da interface, sem pausas fixas para sincronizar
 ações. Erros JavaScript não tratados fazem o teste falhar. Não há snapshots de pixels;

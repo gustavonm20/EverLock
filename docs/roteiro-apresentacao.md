@@ -2,6 +2,9 @@
 
 Roteiro para demonstrar o EverLock numa banca ou feira. Prepare tudo **antes**: `.\iniciar.cmd` rodado uma vez (instala as bibliotecas e baixa os modelos faciais), uma conta de administrador criada, `backup.cmd` executado e o navegador em `http://127.0.0.1:8000`. Tenha uma segunda janela (anônima) para mostrar o cadastro de um usuário comum.
 
+Antes do ensaio, siga o [passo a passo da avaliação com o grupo](ensaio-grupo.md).
+Ele inclui a conferência do conjunto sem inferência e o registro dos resultados reais.
+
 ## O que dizer logo no início (30 s)
 
 O EverLock é um **simulador** de controle de acesso: a porta, a trava, a energia e a rede são **virtuais**. O que é real é o software: contas, e-mail, reconhecimento facial com OpenCV, auditoria, alertas e cópia de segurança. Dizer isso cedo evita a pergunta "isso abre uma porta de verdade?".

@@ -104,14 +104,17 @@ def test_history_filter_edit_discards_late_export_cursor(page):
 
 
 def test_consent_cancelled_during_response_never_starts_camera(page):
-    # Empty synthetic MediaStream: never requests a device or produces personal images.
+    # Canvas frames: never requests a physical device or produces personal images.
     page.add_init_script("""
       window.testCameraStarts = 0;
       navigator.mediaDevices.getUserMedia = async () => {
         window.testCameraStarts += 1;
-        return new MediaStream();
+        const canvas = document.createElement('canvas');
+        canvas.width = 640; canvas.height = 480;
+        const context = canvas.getContext('2d');
+        window.setInterval(() => context.fillRect(0, 0, 640, 480), 50);
+        return canvas.captureStream(10);
       };
-      HTMLMediaElement.prototype.play = async () => {};
     """)
     page.route("**/api/faces/status", lambda route: route.fulfill(json={
         "available": True, "model": "Motor sintético", "reason": "",

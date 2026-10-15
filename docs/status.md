@@ -1,6 +1,6 @@
 # Estado do projeto
 
-Versão atual do código: **0.15.0**, com migrações versionadas, histórico paginado, proteção das requisições, avisos persistentes e melhorias de navegação e cadastro facial. A entrega 0.14 foi integrada à `main` no [PR #21](https://github.com/gustavonm20/EverLock/pull/21), em 13/10/2026; a retomada 0.13, no [PR #20](https://github.com/gustavonm20/EverLock/pull/20). A base de contas e energia foi entregue no [PR #14](https://github.com/gustavonm20/EverLock/pull/14); marca e ajustes visuais, no [PR #16](https://github.com/gustavonm20/EverLock/pull/16). As verificações abaixo preservam o histórico de cada entrega e distinguem implementação de validação com pessoas reais. A publicação da 0.15 é acompanhada pelo PR e por seus resultados de CI, sem antecipar aprovação ou integração.
+Versão atual do código: **0.16.0**, preparada para o ensaio facial do grupo, com conferência prévia do conjunto, menor retenção de fotos na memória e câmera cancelável que aguarda o primeiro quadro. A base 0.15 foi integrada à `main` no [PR #22](https://github.com/gustavonm20/EverLock/pull/22), com [CI aprovado](https://github.com/gustavonm20/EverLock/actions/runs/38504769798). As entregas 0.14 e 0.13 foram integradas pelos [PR #21](https://github.com/gustavonm20/EverLock/pull/21) e [PR #20](https://github.com/gustavonm20/EverLock/pull/20). As verificações abaixo preservam o histórico e distinguem implementação de validação com pessoas reais. A publicação da 0.16 é acompanhada por seu PR e CI; os testes locais não antecipam aprovação remota.
 
 ## Entregue e verificado
 
@@ -165,9 +165,21 @@ a requisição já iniciada pelo clique e a encaminhá-la ao endpoint real, que 
 responder 401. As quatro jornadas de diagnóstico passaram novamente no Chrome
 após o ajuste. A aplicação e suas proteções não foram alteradas por essa correção.
 
+## Preparação do ensaio facial (incremento 0.16, 15/10/2026)
+
+- `--check-only` confere manifesto, declarações, caminhos, leitura, tamanho e duplicatas antes de carregar modelos. O resumo usa códigos e números das amostras, sem caminhos; não analisa rostos ou qualidade. A ausência de pessoas fora da galeria gera um aviso sobre a medição de falsas aceitações.
+- A avaliação deixa de manter todas as fotos na memória. Após a conferência inicial, relê lotes pequenos e verifica os hashes antes de usar cada foto. Arquivo alterado ou removido interrompe a execução sem emitir um relatório parcial. Há uma leitura adicional de disco; não se presume ganho de velocidade do motor.
+- Relatórios incluem versão e data UTC. Destino já ocupado é recusado antes de processar as fotos, preservando o relatório anterior.
+- A câmera aguarda o primeiro quadro para liberar a captura, tem limite de espera e encerra permissões tardias após cancelar/sair. Uma abertura antiga não substitui uma nova; captura sem imagem é recusada com orientação.
+- [Roteiro do grupo](ensaio-grupo.md), protocolo de avaliação, roadmap e relatório técnico atualizados. Arquitetura, banco e limites faciais permanecem os mesmos.
+
+Verificado localmente: **17 testes da ferramenta de avaliação** e **11 jornadas de navegador** aprovados, com arquivos, contas e vídeo sintéticos. O teste de memória usa 27 MB de arquivos e exige pico de alocações Python abaixo de 8 MB; não inclui memória nativa do OpenCV. Ruff e sintaxe JavaScript conferidos. A suíte geral é executada pelo CI do PR. Nenhuma foto humana ou banco pessoal foi usado para essa validação.
+
+A proposta de acabamento visual fica em prévia separada, aguardando aprovação do responsável. Não foram aplicados efeitos ou mudanças de aparência ao produto nesta entrega. O grupo realizará o ensaio real em seguida; os sete aceites continuam abertos até suas evidências.
+
 ## Pendências de aceite e validação
 
-- Consentimento dado pela própria pessoa (hoje o administrador o registra).
+- Aceite pessoal no fluxo declarado antes da câmera; o registro usa a sessão administrativa e ainda precisa ser conferido com o grupo.
 - Transporte remoto entre computadores e implantação compartilhada com HTTPS.
 - Avaliação com imagens autorizadas pelo novo protocolo e ensaio de ataques de apresentação; o desafio simples não é prova de vida forte.
 - Relatórios periódicos por n8n (as notificações de eventos já existem).

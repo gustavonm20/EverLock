@@ -1,11 +1,12 @@
 import json
 import math
 import runpy
+import tracemalloc
 from pathlib import Path
 
 import pytest
 
-from everlock.evaluation import ManifestError, evaluate
+from everlock.evaluation import ManifestError, check_dataset, evaluate
 from everlock.faces import FaceError, FaceReading, UnavailableEngine
 
 
@@ -183,6 +184,92 @@ def test_cli_writes_a_new_report_and_refuses_to_overwrite_it(tmp_path, monkeypat
     assert main(arguments) == 0
     original = output.read_text(encoding="utf-8")
     assert json.loads(original)["counts"]["genuine_correct"] == 1
+    calls = engine.calls
     assert main(arguments) == 1
+    assert engine.calls == calls  # não reprocessa as fotos para um destino já ocupado
     assert output.read_text(encoding="utf-8") == original
     assert "Avaliação não realizada" in capsys.readouterr().err
+
+
+def test_preflight_cli_checks_files_without_loading_models(tmp_path, monkeypatch, capsys):
+    path, _ = dataset(tmp_path, [("p001", [vector(1)] * 3, [vector(1)])])
+    script = Path(__file__).resolve().parents[1] / "scripts" / "avaliar_rostos.py"
+    main = runpy.run_path(str(script))["main"]
+
+    def forbidden(models):
+        raise AssertionError("A conferência não deve carregar modelos nem processar rostos.")
+
+    monkeypatch.setitem(main.__globals__, "OpenCVFaceEngine", forbidden)
+    assert main([str(path), "--check-only"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["ready"] is True
+    assert report["files"] == {"total": 4, "readable": 4, "failed": 0}
+    assert report["dataset"] == {
+        "subjects": 1, "gallery_subjects": 1, "unknown_subjects": 0,
+        "enrollment_images": 3, "test_images": 1,
+    }
+    assert report["warnings"]
+    assert str(tmp_path) not in json.dumps(report)
+    assert ".png" not in json.dumps(report)
+    (tmp_path / "p001-tests-1.png").unlink()
+    assert main([str(path), "--check-only"]) == 1
+    failed = json.loads(capsys.readouterr().out)
+    assert failed["problems"] == [{
+        "subject": "p001", "stage": "tests", "sample": 1, "code": "file_unreadable",
+    }]
+
+
+def test_preflight_rejects_copies_and_reports_oversized_files(tmp_path):
+    path, _ = dataset(tmp_path, [("p001", [vector(1)] * 3, [vector(1)])])
+    test = tmp_path / "p001-tests-1.png"
+    test.write_bytes((tmp_path / "p001-enrollment-1.png").read_bytes())
+    with pytest.raises(ManifestError):
+        check_dataset(path)
+    test.write_bytes(b"x" * 1_500_001)
+    report = check_dataset(path)
+    assert not report["ready"]
+    assert report["files"]["failed"] == 1
+    assert report["problems"][0]["code"] == "invalid_image"
+
+
+@pytest.mark.parametrize("change", ["replace", "remove"])
+def test_changed_dataset_aborts_without_writing_a_report(tmp_path, monkeypatch, capsys, change):
+    path, engine = dataset(tmp_path, [("p001", [vector(1)] * 3, [vector(1)])])
+    original_read = engine.read
+
+    def changing(image):
+        reading = original_read(image)
+        if engine.calls == 1:
+            target = tmp_path / "p001-tests-1.png"
+            if change == "replace":
+                target.write_bytes(b"outra captura")
+            else:
+                target.unlink()
+        return reading
+
+    monkeypatch.setattr(engine, "read", changing)
+    script = Path(__file__).resolve().parents[1] / "scripts" / "avaliar_rostos.py"
+    main = runpy.run_path(str(script))["main"]
+    monkeypatch.setitem(main.__globals__, "OpenCVFaceEngine", lambda models: engine)
+    output = tmp_path / "result.json"
+    assert main([str(path), "--output", str(output)]) == 1
+    assert "conjunto mudou" in capsys.readouterr().err
+    assert not output.exists()
+    assert engine.calls == 3  # a captura de teste alterada não chegou ao motor
+
+
+def test_large_dataset_does_not_keep_all_encoded_photos_in_memory(tmp_path, monkeypatch):
+    path, engine = dataset(tmp_path, [("p001", [vector(1)] * 3, [vector(1)] * 24)])
+    manifest = json.loads(path.read_text())
+    for index, name in enumerate(manifest["subjects"][0]["enrollment"]
+                                 + manifest["subjects"][0]["tests"]):
+        (tmp_path / name).write_bytes(bytes([index]) + b"x" * 1_000_000)
+    monkeypatch.setattr(engine, "read", lambda image: FaceReading(vector(1), 100, .99, 100, 0))
+    tracemalloc.start()
+    try:
+        report = evaluate(path, engine)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert report["counts"]["genuine_correct"] == 24
+    assert peak < 8_000_000  # fotos do conjunto somam 27 MB, sem contar o OpenCV
