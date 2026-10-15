@@ -57,6 +57,7 @@ O pacote inclui todo o código-fonte, interface, testes e documentação desta e
 - Cadastra identidades separadas das contas, com consentimento versionado, revogação, exclusão, retenção automática e janela de horário; oferece cadastro facial cifrado e testes simulados sem câmera.
 - Permite cadastrar o rosto da própria conta e entrar por desafio de movimento, mantendo a senha como alternativa.
 - Prepara a avaliação facial com imagens de cadastro e teste separadas, métricas 1:N e relatório local (veja [avaliação](docs/avaliacao-facial.md)).
+- Confere o conjunto da avaliação sem modelos (`--check-only`) e analisa as fotos em lotes pequenos; aguarda imagem da câmera antes de permitir capturas.
 - Filtra o histórico (resultado, origem, texto, período) e exporta em CSV para o Excel.
 - Faz cópia de segurança do banco e da chave dos rostos com um clique (`backup.cmd`), com senha opcional.
 - Recupera a senha por e-mail ("Esqueci minha senha"), com link de 1 hora e uso único.
@@ -143,6 +144,7 @@ Os testes cobrem porta, energia, relógio, migração, recuperação, autentica�
 - [Identidades, consentimento e reconhecimento simulado](docs/identities.md)
 - [Reconhecimento facial e limites](docs/facial-recognition.md)
 - [Avaliação facial local](docs/avaliacao-facial.md)
+- [Avaliação e reconhecimento com o grupo: passo a passo](docs/ensaio-grupo.md)
 - [Cenários integrados](docs/cenarios-integrados.md)
 - [Relatório técnico](docs/relatorio-tecnico.md)
 - [Nobreak externo: uso e limites](docs/ups.md)

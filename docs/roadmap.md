@@ -22,10 +22,13 @@ A base, porta, energia, tema, contas e permissões estão entregues. O increment
 
 ## Próximo incremento
 
-A melhoria complementar 0.14 reúne o [diagnóstico local](diagnostico.md) e os
-[testes de interface](testes-interface.md). As validações humanas e externas descritas
-abaixo foram adiadas pelo responsável em 03/10/2026; os testes automatizados novos
-não encerram esses aceites.
+A base 0.15 foi integrada pelo [PR #22](https://github.com/gustavonm20/EverLock/pull/22).
+A versão 0.16 prepara a avaliação do grupo: conferência do conjunto antes do motor,
+leitura das fotos em lotes pequenos, proteção contra alteração dos arquivos durante
+o ensaio e câmera cancelável que aguarda o primeiro quadro. O próximo passo é a
+[avaliação com o grupo](ensaio-grupo.md), seguida do ensaio integrado e da revisão
+dos resultados. Os aceites humanos e externos continuam abertos; a preparação e os
+testes sintéticos não os encerram.
 
 O incremento 0.13 prepara a [avaliação facial](avaliacao-facial.md) e os [cenários integrados](cenarios-integrados.md). Execute o pipeline já implementado (YuNet, SFace, vetores cifrados e desafio de movimento) com imagens autorizadas distintas para cadastro e avaliação. Ajuste limites somente a partir dessas medições; consentimento da identidade pela própria pessoa segue pendente. Resultados preparados para testes continuam identificados como simulados. O protocolo de comandos e a reconexão sem execução de pedidos antigos estão descritos em [communication.md](communication.md).
 

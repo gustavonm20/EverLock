@@ -4,9 +4,12 @@ import hashlib
 import json
 import math
 import re
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
 
+from everlock import __version__
 from everlock.face_login import LoginSettings
 from everlock.faces import MAX_IMAGE_BYTES, FaceEngine, FaceError
 from everlock.recognition import (
@@ -69,21 +72,47 @@ def _manifest(path: Path) -> list[dict]:
     return subjects
 
 
+def _image_bytes(path: Path) -> bytes:
+    with path.open("rb") as handle:
+        return handle.read(MAX_IMAGE_BYTES + 1)
+
+
+@dataclass(frozen=True)
+class _ImageSource:
+    path: Path
+    digest: bytes | None = None
+    error: FaceError | None = None
+
+    def load(self) -> bytes | FaceError:
+        if self.error:
+            return self.error
+        try:
+            image = _image_bytes(self.path)
+        except OSError as error:
+            raise ManifestError("O conjunto mudou após a conferência. Confira os arquivos "
+                                "e execute novamente.") from error
+        if hashlib.sha256(image).digest() != self.digest:
+            raise ManifestError("O conjunto mudou após a conferência. Confira os arquivos "
+                                "e execute novamente.")
+        return image
+
+
 def _images(subjects: list[dict]) -> dict:
-    """Lê sem copiar arquivos; detecta cópias idênticas mesmo com outro nome."""
+    """Confere todo o conjunto, guardando só referências e hashes em memória."""
     images, digests = {}, set()
     for subject in subjects:
         for stage in ("enrollment", "tests"):
             for index, path in enumerate(subject[stage], 1):
                 key = subject["code"], stage, index
                 try:
-                    with path.open("rb") as handle:
-                        image = handle.read(MAX_IMAGE_BYTES + 1)
+                    image = _image_bytes(path)
                 except OSError:
-                    images[key] = FaceError("file_unreadable", "Arquivo não pôde ser lido.")
+                    images[key] = _ImageSource(
+                        path, error=FaceError("file_unreadable", "Arquivo não pôde ser lido."))
                     continue
                 if len(image) > MAX_IMAGE_BYTES:
-                    images[key] = FaceError("invalid_image", "Imagem grande demais.")
+                    images[key] = _ImageSource(
+                        path, error=FaceError("invalid_image", "Imagem grande demais."))
                     continue
                 digest = hashlib.sha256(image).digest()
                 if digest in digests:
@@ -91,8 +120,37 @@ def _images(subjects: list[dict]) -> dict:
                         "Há arquivos com conteúdo idêntico. Separe capturas distintas de "
                         "cadastro e teste, sem repetir imagens.")
                 digests.add(digest)
-                images[key] = image
+                images[key] = _ImageSource(path, digest)
     return images
+
+
+def check_dataset(manifest: Path) -> dict:
+    """Confere autorização declarada, separação e arquivos, sem carregar o motor."""
+    subjects = _manifest(Path(manifest))
+    images = _images(subjects)
+    problems = [{"subject": code, "stage": stage, "sample": index,
+                 "code": image.error.code}
+                for (code, stage, index), image in images.items() if image.error]
+    gallery = sum(bool(subject["enrollment"]) for subject in subjects)
+    unknown = len(subjects) - gallery
+    return {
+        "scope": "dataset_preflight", "application_version": __version__,
+        "generated_at": datetime.now(UTC).isoformat(), "ready": not problems,
+        "dataset": {"subjects": len(subjects), "gallery_subjects": gallery,
+                    "unknown_subjects": unknown,
+                    "enrollment_images": sum(len(s["enrollment"]) for s in subjects),
+                    "test_images": sum(len(s["tests"]) for s in subjects)},
+        "files": {"total": len(images), "readable": len(images) - len(problems),
+                  "failed": len(problems)},
+        "problems": problems,
+        "warnings": ([] if unknown else [
+            "Sem pessoas fora da galeria, não será possível medir falsas aceitações."]),
+        "limitations": [
+            "Confere arquivos e declarações; não analisa rostos ou qualidade das fotos.",
+            "A autorização declarada precisa corresponder ao aceite real das pessoas.",
+            "Recortes ou alterações da mesma captura ainda exigem revisão humana.",
+        ],
+    }
 
 
 def _elapsed_ms(timer, started):
@@ -174,11 +232,13 @@ def evaluate(
         code = subject["code"]
         if not subject["enrollment"]:
             continue
-        samples = [((code, "enrollment", index), images[code, "enrollment", index])
+        # No máximo cinco fotos de cadastro coexistem; o conjunto não fica na RAM.
+        samples = [((code, "enrollment", index), images[code, "enrollment", index].load())
                    for index in range(1, len(subject["enrollment"]) + 1)]
         started = timer()
         reader = _EnrollmentReader(engine, samples, captures, timer)
         vectors, problem = validated_vectors(reader, [b""] * len(samples), threshold)
+        del reader, samples
         status = problem[1]["code"] if problem else "enrolled"
         if vectors:
             for vector in vectors:
@@ -207,9 +267,10 @@ def evaluate(
                 attempts.append({**attempt, "code": reason})
                 counts["skipped_tests"] += 1
                 continue
+            image = images[code, "tests", index].load()
             started = timer()
             try:
-                reading = _read(engine, images[code, "tests", index],
+                reading = _read(engine, image,
                                 (code, "tests", index), captures, timer)
             except FaceError as error:
                 counts["genuine_capture_failures" if genuine else "unknown_capture_failures"] += 1
@@ -240,6 +301,7 @@ def evaluate(
     genuine, unknown = counts["genuine_attempts"], counts["unknown_attempts"]
     return {
         "report_version": 1, "scope": "offline_1_to_n_identification",
+        "application_version": __version__, "generated_at": datetime.now(UTC).isoformat(),
         "model": engine.model_id, "profile": profile, "provisional": True,
         "settings": {"match_threshold": threshold, "ambiguity_margin": margin,
                      "front_max_yaw": settings.front_max_yaw,

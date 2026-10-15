@@ -46,9 +46,19 @@ internet depois dessa preparação.
 Na pasta do projeto:
 
 ```powershell
+.\.venv\Scripts\python scripts\avaliar_rostos.py data\avaliacao\manifest.json --check-only
 .\.venv\Scripts\python scripts\avaliar_rostos.py data\avaliacao\manifest.json --profile door --output data\avaliacao\porta-01.json
 .\.venv\Scripts\python scripts\avaliar_rostos.py data\avaliacao\manifest.json --profile login --output data\avaliacao\login-01.json
 ```
+
+Comece com `--check-only`: essa conferência funciona mesmo sem OpenCV/modelos,
+verifica os consentimentos declarados, os caminhos, o tamanho, a leitura dos arquivos
+e as cópias idênticas. Mostra quantidades e problemas por código da pessoa e número
+da amostra, sem caminhos no JSON. Não decodifica as fotos nem verifica rosto, nitidez
+ou formato real. `ready: true` significa somente que essa preparação passou.
+O código de saída é 0 quando os arquivos estão prontos para a próxima etapa e 1
+quando há problema. Sem participantes fora da galeria, aparece um aviso: falsas
+aceitações não poderão ser medidas nesse conjunto.
 
 `door` usa os limites atuais da porta (similaridade 0,45 e margem 0,05); `login` usa os do
 login (0,55 e 0,08). `--models-dir` escolhe outra pasta de modelos. Sem `--output`, o JSON é
@@ -62,6 +72,14 @@ relatório. Esses parâmetros afetam somente essa execução. Ajustar limites ex
 os resultados e validar a escolha em outro conjunto reservado; escolher e declarar
 precisão no mesmo conjunto favorece resultados otimistas. A ferramenta não busca
 automaticamente um limite nem altera `FaceSettings`/`LoginSettings`.
+
+A versão 0.16 confere o conjunto uma vez e mantém apenas referências e hashes internos.
+Durante a análise, lê um lote de até cinco fotos de cadastro ou uma captura de teste,
+em vez de reter todas as fotos na memória. Os arquivos são relidos e comparados com
+a conferência inicial: alteração ou remoção entre as fases interrompe a execução,
+sem emitir um relatório parcial. Não edite o conjunto enquanto a avaliação roda.
+Isso reduz a retenção de bytes em memória; não é uma medição de velocidade do OpenCV.
+Relatório existente é recusado antes de carregar o motor e reprocessar as fotos.
 
 ## Ler as taxas
 
@@ -99,6 +117,7 @@ apresente como tempo total para entrar na aplicação ou liberar a porta. O prim
 aquecer o motor, por isso registre a máquina, ordem e condições de execução junto do conjunto.
 
 O relatório guarda somente códigos anônimos, medidas, decisões, contagens e limites.
+Inclui `application_version` e `generated_at` (UTC) para identificar a execução.
 Não guarda imagens, vetores, nomes de arquivo, caminhos ou hashes. Os vetores existem na
 memória durante a execução e não são inseridos no banco. Códigos e resultados ainda podem
 identificar participantes para quem conhece a correspondência; proteja o relatório local.
@@ -117,3 +136,5 @@ segurança. Registre localmente quantidade de pessoas, tentativas, sessões e co
 atualizar os quadros, publique somente o resumo agregado autorizado e as limitações. A
 etapa 12 só pode ser concluída após a execução real, revisão dos erros e documentação das
 condições e limitações.
+
+Para a sequência prática da equipe, use o [roteiro de avaliação do grupo](ensaio-grupo.md).

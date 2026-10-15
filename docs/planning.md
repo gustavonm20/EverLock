@@ -94,6 +94,16 @@ Guias: [avaliação facial](avaliacao-facial.md), [cenários integrados](cenario
 
 ## Rotina da equipe
 
+### Preparação 0.16 — avaliação do grupo
+
+Solicitada em 15/10/2026 antes do ensaio com pessoas: pré-conferência do manifesto
+sem modelos, menor retenção de fotos na memória, recusa de conjunto alterado e
+melhoria do ciclo de câmera. Inclui atualização do relatório e roteiro prático.
+Não altera os limites de reconhecimento nem as regras de autorização. A execução
+real será feita pelo responsável e seu grupo, conforme [ensaio-grupo.md](ensaio-grupo.md).
+Efeitos e mudanças de aparência dependem da aprovação da prévia solicitada; não
+fazem parte desta entrega funcional enquanto essa aprovação estiver pendente.
+
 ### Melhoria complementar 0.15 — base operacional e uso guiado
 
 Incremento solicitado para banco, backend, interface e segurança: migrações

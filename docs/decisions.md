@@ -185,3 +185,24 @@ O aceite com as pessoas do grupo segue pendente.
 Skills versionadas orientam desenvolvimento, revisão e entrega; conectores não
 recebem autorização permanente de publicar. Figma documenta a interface, Notion
 acompanha evidências e GitHub continua sendo a fonte do código.
+
+## 25. Preparar a avaliação antes de calibrar o reconhecimento
+
+Em 15/10/2026, a atualização solicitada prepara o ensaio que será feito pelo grupo.
+`--check-only` confere o conjunto sem modelos ou inferência, com resumo por códigos.
+Não substitui aceite pessoal, análise de qualidade nem avaliação do reconhecimento.
+
+A análise deixa de reter todas as fotos na memória. Confere hashes internos antes
+da inferência e verifica novamente os bytes ao usá-los; um conjunto alterado
+interrompe a execução. Há uma leitura adicional de disco por foto, em troca de
+menor retenção de imagens e de um conjunto consistente. Hashes e caminhos não são
+incluídos nos relatórios. Arquivo de saída existente é recusado antes da inferência.
+
+A câmera só fica pronta após receber o primeiro quadro. Cancelamento e logout
+encerram qualquer permissão que chegue depois, sem substituir uma câmera nova.
+Aberturas têm limite de espera de 15 segundos para permissão e 10 para o primeiro
+quadro. Uma permissão pendente do navegador pode continuar visível após cancelar;
+se ela for concedida depois, o stream retornado é encerrado.
+
+Nenhum limite facial é calibrado sem medições do grupo. A proposta de efeitos
+visuais fica em prévia separada até a aprovação do responsável.

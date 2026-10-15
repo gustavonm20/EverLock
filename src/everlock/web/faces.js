@@ -125,8 +125,8 @@
       if (session !== generation || enrollingId !== id) return;
       step(ok ? value.message : (value.message || (typeof value.detail === "string" ? value.detail : "Não foi possível cadastrar o rosto.")), ok ? "success" : "error");
       if (ok) { stopCamera(video); document.dispatchEvent(new Event("everlock-identities-changed")); }
-    } catch {
-      if (session === generation) step("Não foi possível concluir o cadastro. Tente novamente.", "error");
+    } catch (error) {
+      if (session === generation) step(error.name === "CameraError" ? error.message : "Não foi possível concluir o cadastro. Tente novamente.", "error");
     } finally {
       images.length = 0;
       if (session === generation) { busy = false; byId("face-enroll-start").disabled = !isOn(video); }
@@ -191,9 +191,9 @@
       verifyResult.textContent = ok ? `${value.message || "Reconhecido."}` : (value.message || detail || "Não foi possível reconhecer.");
       verifyResult.dataset.outcome = ok ? "success" : "denied";
       document.dispatchEvent(new Event("everlock-identities-changed"));
-    } catch {
+    } catch (error) {
       cancelChallenge(challengeId);
-      if (current()) { verifyResult.textContent = "Falha ao falar com o servidor local."; verifyResult.dataset.outcome = "denied"; }
+      if (current()) { verifyResult.textContent = error.name === "CameraError" ? error.message : "Falha ao falar com o servidor local."; verifyResult.dataset.outcome = "denied"; }
     } finally {
       if (activeChallenge === challengeId) activeChallenge = null;
       if (session === generation) { busy = false; button.disabled = !isOn(video); }
