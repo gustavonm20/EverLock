@@ -101,6 +101,20 @@
     return canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
   }
 
+  function captureProgress(element, completed = null, current = null) {
+    element.hidden = completed === null;
+    const shots = [...element.querySelectorAll("li")];
+    element.querySelector("[data-capture-count]").textContent = `${completed ?? 0} de ${shots.length}`;
+    shots.forEach((shot, index) => {
+      const done = index < (completed ?? 0), active = index + 1 === current;
+      shot.dataset.state = done ? "done" : active ? "current" : "waiting";
+      shot.textContent = done ? "✓" : String(index + 1);
+      shot.setAttribute("aria-label", `Foto ${index + 1}: ${done ? "capturada" : active ? "em preparação" : "aguardando"}`);
+      if (active) shot.setAttribute("aria-current", "step");
+      else shot.removeAttribute("aria-current");
+    });
+  }
+
   async function request(path, method = "GET", body) {
     const response = await fetch(`/api/${path}`, {
       method, credentials: "same-origin", cache: "no-store",
@@ -120,5 +134,5 @@
     return fallback;
   }
 
-  window.FaceKit = Object.freeze({ start, stop, capture, request, messageOf, pause, isOn: (video) => streams.has(video) });
+  window.FaceKit = Object.freeze({ start, stop, capture, captureProgress, request, messageOf, pause, isOn: (video) => streams.has(video) });
 })();

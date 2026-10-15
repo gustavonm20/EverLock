@@ -89,6 +89,8 @@ inclui versão do aplicativo e data UTC. Veja a interpretação em [avaliação 
    confira as permissões e tente novamente.
 4. Inicie a captura e siga as cinco instruções. O resultado precisa indicar sucesso;
    erro de qualidade exige repetir o cadastro. Cadastrar o rosto não libera a trava.
+   Na 0.16.1, as cinco marcações e a contagem acompanham as fotos capturadas; chegar
+   a cinco não significa que a análise aprovou o rosto. Aguarde a mensagem final.
 5. Em **Visão geral → Reconhecimento facial**, ligue a câmera e reconheça seguindo o
    giro sorteado. A liberação deve durar três segundos virtuais e a porta continuar
    fechada até a ação de entrada. Verifique também o sentido do giro na câmera usada.

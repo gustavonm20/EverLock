@@ -1,6 +1,6 @@
 # Estado do projeto
 
-Versão atual do código: **0.16.0**, preparada para o ensaio facial do grupo, com conferência prévia do conjunto, menor retenção de fotos na memória e câmera cancelável que aguarda o primeiro quadro. A base 0.15 foi integrada à `main` no [PR #22](https://github.com/gustavonm20/EverLock/pull/22), com [CI aprovado](https://github.com/gustavonm20/EverLock/actions/runs/38504769798). As entregas 0.14 e 0.13 foram integradas pelos [PR #21](https://github.com/gustavonm20/EverLock/pull/21) e [PR #20](https://github.com/gustavonm20/EverLock/pull/20). As verificações abaixo preservam o histórico e distinguem implementação de validação com pessoas reais. A publicação da 0.16 é acompanhada por seu PR e CI; os testes locais não antecipam aprovação remota.
+Versão atual do código: **0.16.1**, com o acabamento visual aprovado pelo responsável após a prévia. Mantém a preparação do ensaio facial da 0.16, integrada à `main` no [PR #23](https://github.com/gustavonm20/EverLock/pull/23), com [305 testes gerais e 11 jornadas de navegador aprovados](https://github.com/gustavonm20/EverLock/actions/runs/38686568687). A base 0.15 foi integrada pelo [PR #22](https://github.com/gustavonm20/EverLock/pull/22). As verificações abaixo preservam o histórico e distinguem implementação de validação com pessoas reais. A publicação da 0.16.1 é acompanhada por seu próprio PR e CI; testes locais não antecipam aprovação remota.
 
 ## Entregue e verificado
 
@@ -176,6 +176,16 @@ após o ajuste. A aplicação e suas proteções não foram alteradas por essa c
 Verificado localmente: **17 testes da ferramenta de avaliação** e **11 jornadas de navegador** aprovados, com arquivos, contas e vídeo sintéticos. O teste de memória usa 27 MB de arquivos e exige pico de alocações Python abaixo de 8 MB; não inclui memória nativa do OpenCV. Ruff e sintaxe JavaScript conferidos. A suíte geral é executada pelo CI do PR. Nenhuma foto humana ou banco pessoal foi usado para essa validação.
 
 A proposta de acabamento visual fica em prévia separada, aguardando aprovação do responsável. Não foram aplicados efeitos ou mudanças de aparência ao produto nesta entrega. O grupo realizará o ensaio real em seguida; os sete aceites continuam abertos até suas evidências.
+
+## Acabamento aprovado (incremento 0.16.1, 15/10/2026)
+
+- Após a comparação da prévia, o responsável autorizou o acabamento e sua publicação no GitHub.
+- Entrada de página com transição de 150 ms e resposta discreta dos botões ao passar o mouse e pressionar. Navegação e foco não aguardam a animação; a estrutura, as cores e as fontes foram preservadas.
+- Indicador das cinco fotos nos cadastros de identidade e da própria conta: só incrementa depois de uma captura concluída. Marca preparação e capturas, não aprovação do rosto; cinco fotos ainda dependem da resposta da análise.
+- Nova tentativa começa em zero. Cancelamento, troca de página, perda de visibilidade e logout limpam e ocultam o indicador; respostas de tentativas antigas não o restauram. Falha de captura não completa uma etapa.
+- A preferência do sistema por movimento reduzido desativa animações, transições e deslocamentos de botões. Não foram adicionadas bibliotecas, temporizadores cosméticos nem alterações de banco, reconhecimento ou autorização.
+
+Verificado localmente: **16 jornadas de navegador aprovadas no Chrome**, Ruff e sintaxe JavaScript aprovados. Os dois cadastros foram conferidos em 1440 px/claro e 390 px/escuro; os testes também cobrem movimento reduzido, foco, captura recusada e progresso antigo após logout. A bateria usa vídeo gerado e banco isolado, sem fotos humanas ou câmera física. A suíte geral será executada pelo CI obrigatório do PR. Os aceites reais do grupo continuam abertos. Notion e Figma não fazem parte desta publicação.
 
 ## Pendências de aceite e validação
 

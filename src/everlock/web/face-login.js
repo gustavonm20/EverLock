@@ -4,7 +4,8 @@
 // Nada de imagem é guardado: as fotos vão ao servidor local só para análise.
 (() => {
   const byId = (id) => document.getElementById(id);
-  const { start, stop, capture, pause, request, messageOf } = window.FaceKit;
+  const { start, stop, capture, captureProgress, pause, request, messageOf } = window.FaceKit;
+  const progress = byId("account-face-progress");
   const SHOTS = 5, SHOT_INTERVAL_MS = 900, TURN_FRAMES = 6, TURN_INTERVAL_MS = 450;
   const prompts = [
     "Olhe de frente para a câmera.", "Continue de frente, relaxado.",
@@ -54,6 +55,7 @@
     generation += 1;
     cancelChallenge(activeChallenge); activeChallenge = null;
     stop(video); stop(accountVideo);
+    captureProgress(progress);
     panel.hidden = true; byId("face-login").hidden = false; busy = false;
     byId("account-face-submit").disabled = !accountAvailable;
   }
@@ -147,17 +149,19 @@
     const operation = generation;
     const current = () => operation === generation && !document.hidden && Boolean(document.body.dataset.role);
     const password = form.elements.password.value, consent = form.elements.consent.checked;
+    const images = [];
     try {
       cameraStarting = true;
       try { await start(accountVideo); } finally { cameraStarting = false; }
       if (!current()) { stop(accountVideo); return; }
       step("Câmera ligada. Olhe para ela.");
-      const images = [];
       for (let shot = 0; shot < SHOTS; shot += 1) {
+        captureProgress(progress, images.length, shot + 1);
         step(`Foto ${shot + 1} de ${SHOTS}: ${prompts[shot]}`);
         await pause(SHOT_INTERVAL_MS);
         if (!current()) return;
         images.push(capture(accountVideo));
+        captureProgress(progress, images.length);
       }
       stop(accountVideo);
       step("Analisando as fotos…");
@@ -167,8 +171,11 @@
       if (!current()) return;
       step(ok ? value.message : messageOf(value, "Não foi possível cadastrar o rosto."), ok ? "success" : "error");
       if (ok) form.reset();
-    } catch (error) { if (current()) step(error.message, "error"); }
+    } catch (error) {
+      if (current()) { captureProgress(progress, images.length); step(error.message, "error"); }
+    }
     finally {
+      images.length = 0;
       if (operation === generation) { stop(accountVideo); busy = false; byId("account-face-submit").disabled = false; }
     }
     if (current()) await loadAccountFace();

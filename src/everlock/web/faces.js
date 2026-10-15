@@ -10,7 +10,8 @@
     "Vire o rosto bem pouco para a esquerda.", "Vire o rosto bem pouco para a direita.",
     "Volte a olhar de frente. Última foto!",
   ];
-  const { start: startCamera, stop: stopCamera, capture, pause, isOn, request: api } = window.FaceKit;
+  const { start: startCamera, stop: stopCamera, capture, captureProgress, pause, isOn, request: api } = window.FaceKit;
+  const progress = byId("face-enroll-progress");
   let status = { available: false, reason: "Verificando…" };
   let enrollingId = null, busy = false, generation = 0, sessionGeneration = 0;
   let cameraStarting = false, activeChallenge = null;
@@ -37,6 +38,7 @@
     enrollmentPolicy = null; byId("face-subject-consent").checked = false;
     byId("face-enroll-prepare").disabled = true;
     byId("face-enroll-start").disabled = true;
+    captureProgress(progress);
   }
 
   // --- estado do motor facial ---------------------------------------------------------------
@@ -95,6 +97,7 @@
       await startCamera(byId("face-enroll-video"));
       if (session !== generation) { stopCamera(byId("face-enroll-video")); return; }
       step("2 de 3 · Câmera ligada. Use boa iluminação, fique sozinho no enquadramento e centralize o rosto. Inicie quando estiver pronto.");
+      captureProgress(progress, 0);
       byId("face-enroll-start").disabled = false;
       byId("face-enroll-start").focus();
     } catch (error) {
@@ -112,6 +115,7 @@
     const images = [];
     try {
       for (let shot = 0; shot < SHOTS; shot += 1) {
+        captureProgress(progress, images.length, shot + 1);
         for (let remaining = 3; remaining > 0; remaining -= 1) {
           step(`3 de 3 · Foto ${shot + 1}/${SHOTS}: ${prompts[shot]} Captura em ${remaining}…`);
           await pause(1000);
@@ -119,6 +123,7 @@
         }
         if (session !== generation || enrollingId !== id) return;
         images.push(capture(video));
+        captureProgress(progress, images.length);
       }
       step("Analisando as fotos…");
       const { ok, value } = await api(`identities/${id}/face`, "POST", { images });
@@ -126,7 +131,10 @@
       step(ok ? value.message : (value.message || (typeof value.detail === "string" ? value.detail : "Não foi possível cadastrar o rosto.")), ok ? "success" : "error");
       if (ok) { stopCamera(video); document.dispatchEvent(new Event("everlock-identities-changed")); }
     } catch (error) {
-      if (session === generation) step(error.name === "CameraError" ? error.message : "Não foi possível concluir o cadastro. Tente novamente.", "error");
+      if (session === generation) {
+        captureProgress(progress, images.length);
+        step(error.name === "CameraError" ? error.message : "Não foi possível concluir o cadastro. Tente novamente.", "error");
+      }
     } finally {
       images.length = 0;
       if (session === generation) { busy = false; byId("face-enroll-start").disabled = !isOn(video); }

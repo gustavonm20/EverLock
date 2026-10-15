@@ -6,6 +6,7 @@
   const pages = Array.from(main.querySelectorAll(":scope > section[id]"));
   const pageIds = new Set(pages.map((page) => page.id));
   let sessionReady = false;
+  let displayedPage = null;
   const toggle = document.getElementById("nav-toggle");
   function closeMenu() { document.body.classList.remove("menu-open"); toggle.setAttribute("aria-expanded", "false"); }
   toggle.addEventListener("click", () => {
@@ -29,7 +30,13 @@
       history.replaceState(null, "", `${location.pathname}${location.search}#simulador`);
     }
 
-    for (const page of pages) page.hidden = page !== activePage;
+    const visible = sessionReady && !main.hidden;
+    for (const page of pages) {
+      page.hidden = page !== activePage;
+      if (!visible || page !== activePage) page.classList.remove("page-enter");
+    }
+    if (visible && activePage !== displayedPage) activePage.classList.add("page-enter");
+    displayedPage = visible ? activePage : null;
     const activeLink = document.querySelector(`.nav-link[href="#${activePage.id}"]`);
     for (const link of document.querySelectorAll(".nav-link")) {
       const isActive = link === activeLink;
