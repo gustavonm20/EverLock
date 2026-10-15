@@ -94,6 +94,15 @@ Guias: [avaliação facial](avaliacao-facial.md), [cenários integrados](cenario
 
 ## Rotina da equipe
 
+### Acabamento 0.16.1 — prévia aprovada
+
+Em 15/10/2026, após comparar a prévia, o responsável autorizou transição de página
+de 150 ms, resposta suave dos botões e indicador das cinco capturas. Mantém cores,
+organização e fontes. Respeita movimento reduzido e mantém o foco da navegação.
+O indicador acompanha capturas concluídas nos dois cadastros faciais, sem indicar
+aprovação antes da análise nem sobreviver ao cancelamento/logout. Publicação
+solicitada no GitHub; nenhum aceite facial real é encerrado por esta melhoria.
+
 ### Preparação 0.16 — avaliação do grupo
 
 Solicitada em 15/10/2026 antes do ensaio com pessoas: pré-conferência do manifesto

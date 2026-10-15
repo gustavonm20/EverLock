@@ -32,6 +32,38 @@ main > section:not([hidden]) {
 .face-capture .identity-check { margin: 18px 0; }
 .face-capture video { display: block; margin: 20px auto; }
 input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
+
+/* Acabamento aprovado: só apresentação, sem atrasar navegação ou captura. */
+main > section.page-enter { animation: page-enter 150ms ease-out; }
+@keyframes page-enter {
+  from { opacity: .35; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.button, .text-button, .theme-toggle {
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease, transform 150ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled), .theme-toggle:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--green) 14%, transparent);
+  }
+}
+.button:active:not(:disabled), .text-button:active:not(:disabled), .theme-toggle:active:not(:disabled) {
+  transform: translateY(0) scale(.985);
+}
+.capture-progress { margin: 18px 0; }
+.capture-progress ol { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; margin: 0 0 12px; padding: 0; }
+.capture-progress li {
+  display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  background: var(--green-pale); color: var(--muted); font-size: 13px; font-weight: 600;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+.capture-progress li[data-state=done], .capture-progress li[data-state=current] { background: var(--green); color: var(--white); }
+.capture-progress li[data-state=current] { box-shadow: 0 0 0 4px var(--green-pale); }
+[data-theme=dark] .capture-progress li[data-state=done], [data-theme=dark] .capture-progress li[data-state=current] { color: var(--paper); }
+@media (prefers-reduced-motion: reduce) {
+  .button, .text-button, .theme-toggle { transform: none !important; }
+}
 @media (max-width: 800px) {
   .sidebar { position: relative; width: 100%; inset: auto; padding: 12px 18px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; }
   .sidebar .brand-logo { width: 100px; height: 66px; }

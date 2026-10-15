@@ -206,3 +206,15 @@ se ela for concedida depois, o stream retornado é encerrado.
 
 Nenhum limite facial é calibrado sem medições do grupo. A proposta de efeitos
 visuais fica em prévia separada até a aprovação do responsável.
+
+## 26. Acabamento visual acompanha o estado real, sem interferir no fluxo
+
+O responsável aprovou a proposta após ver a prévia em 15/10/2026 e solicitou o envio
+ao GitHub. A 0.16.1 aplica efeitos de 150 ms, mantendo o desenho atual e respeitando
+`prefers-reduced-motion`. O foco, o cancelamento e a navegação são imediatos; efeitos
+não criam esperas nem participam de decisões de acesso.
+
+As cinco marcações representam fotos efetivamente capturadas, não qualidade ou
+sucesso do cadastro. A etapa em preparação não conta como concluída. Falhas mantêm
+a contagem real; tentativas novas e saídas limpam o estado. A implementação é comum
+aos cadastros de identidade e de conta, sem nova dependência ou coleta adicional.

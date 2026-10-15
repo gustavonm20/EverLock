@@ -68,7 +68,7 @@
       <div class="sidebar-bottom">
         <div class="prototype-note"><span class="little-dot"></span>PROTÓTIPO LOCAL</div>
         <p>Uma porta virtual.<br>Um ambiente para experimentar.</p>
-        <span class="version">Versão <span id="version">0.16.0</span></span>
+        <span class="version">Versão <span id="version">0.16.1</span></span>
       </div>
     </aside>
 
@@ -269,6 +269,10 @@
             <label class="identity-check"><input type="checkbox" id="face-subject-consent">Sou a pessoa que será cadastrada, li o termo e concordo com o uso local dos meus vetores faciais para estes testes. Posso pedir revogação ou exclusão ao administrador.</label>
             <button type="button" class="button button-secondary" id="face-enroll-prepare" disabled>Concordo e ligar câmera</button>
             <video id="face-enroll-video" class="face-video" playsinline muted></video>
+            <div class="capture-progress" id="face-enroll-progress" hidden>
+              <ol aria-label="Capturas do cadastro facial"><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li></ol>
+              <p class="identity-hint">Capturas: <span data-capture-count>0 de 5</span>. A aprovação depende da análise.</p>
+            </div>
             <p class="action-feedback" id="face-enroll-step" role="status" aria-live="polite" aria-atomic="true"></p>
             <div class="identity-actions"><button type="button" class="button button-primary" id="face-enroll-start" disabled>Iniciar captura</button><button type="button" class="button button-quiet" id="face-enroll-cancel">Cancelar e fechar câmera</button></div>
           </div>
@@ -348,6 +352,10 @@
               <p class="identity-hint" id="account-face-consent"></p>
               <label>Senha atual<input name="password" type="password" autocomplete="current-password" required></label>
               <label class="identity-check"><input type="checkbox" name="consent" required>Li e concordo com o termo acima.</label>
+              <div class="capture-progress" id="account-face-progress" hidden>
+                <ol aria-label="Capturas do cadastro facial"><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li></ol>
+                <p class="identity-hint">Capturas: <span data-capture-count>0 de 5</span>. A aprovação depende da análise.</p>
+              </div>
               <p class="action-feedback" id="account-face-step" role="status" aria-live="polite"></p>
               <div class="identity-actions"><button class="button button-secondary" type="submit" id="account-face-submit">Cadastrar meu rosto</button><button class="button button-quiet" type="button" id="account-face-remove" hidden>Remover meu rosto</button></div>
             </form>
