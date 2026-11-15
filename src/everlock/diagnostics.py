@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 
 from everlock import __version__
 from everlock.auth_api import authorized
+from everlock.recognition import REAL_ENGINE_KINDS, engine_kind
 
 router = APIRouter(prefix="/api")
 
@@ -44,15 +45,24 @@ def diagnostics(request: Request):
 
         engine = state.recognition.engine
         engine_ok = bool(engine and engine.available)
-        facial = check(
-            "face_engine", "Reconhecimento facial", "ok" if engine_ok else "attention",
-            "Motor disponível" if engine_ok else "Motor indisponível",
-            "O motor está disponível no servidor. Câmera, precisão e giro ainda dependem "
-            "de validação real." if engine_ok else FACE_DETAILS.get(
-                getattr(engine, "reason_code", ""),
-                "O motor facial não está disponível. Consulte o guia de reconhecimento facial.",
-            ),
-        )
+        test_double = engine_kind(engine) not in REAL_ENGINE_KINDS | {"unavailable"}
+        if engine_ok and test_double:
+            facial = check(
+                "face_engine", "Reconhecimento facial", "attention", "Motor de teste ativo",
+                "Esta instância usa um motor substituto de testes automatizados. Ele não "
+                "reconhece rostos reais; o uso normal carrega o pipeline OpenCV local.",
+            )
+        else:
+            facial = check(
+                "face_engine", "Reconhecimento facial", "ok" if engine_ok else "attention",
+                "Motor disponível" if engine_ok else "Motor indisponível",
+                "O motor OpenCV local está disponível no servidor. Câmera, precisão e giro "
+                "ainda dependem de validação real." if engine_ok else FACE_DETAILS.get(
+                    getattr(engine, "reason_code", ""),
+                    "O motor facial não está disponível. A porta não libera por rosto até ele "
+                    "voltar. Consulte o guia de reconhecimento facial.",
+                ),
+            )
         vault_ok = bool(state.face_login.vault and state.face_login.vault.available)
         protection = check(
             "biometric_storage", "Proteção dos cadastros faciais",

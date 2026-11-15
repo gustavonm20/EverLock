@@ -218,3 +218,30 @@ As cinco marcações representam fotos efetivamente capturadas, não qualidade o
 sucesso do cadastro. A etapa em preparação não conta como concluída. Falhas mantêm
 a contagem real; tentativas novas e saídas limpam o estado. A implementação é comum
 aos cadastros de identidade e de conta, sem nova dependência ou coleta adicional.
+
+## 27. Acesso pela porta com o próprio rosto, por vínculo opcional
+
+**Decisão de 15/11/2026 (0.18.0, local), a partir da limitação registrada na decisão 13:**
+a identidade pode ser vinculada a uma conta, e a própria pessoa registra o aceite e o
+rosto da porta na sessão dela, com a senha atual.
+
+- **Por quê:** a decisão 13 deixou o "consentimento pela própria pessoa" para a etapa com
+  imagens reais. O vínculo cumpre isso sem fundir identidade e conta: vetores continuam
+  com escopo `identidade`, separados dos vetores de login (escopo `conta`).
+- **Controle dividido:** horário, retenção e ativação são do administrador; aceite,
+  captura, remoção e revogação são da pessoa. Conta desativada barra a porta.
+- **Trade-off:** quem tem a sessão e a senha da conta registra o aceite. É mais forte que a
+  declaração na sessão do administrador, mas não comprova identidade civil.
+
+## 28. Toda tentativa facial termina em decisão registrada e falha fechada
+
+**Decisão de 15/11/2026 (0.18.0, local):** captura ruim, cancelamento, desafio vencido,
+motor indisponível, falha inesperada do OpenCV e sessão encerrada durante a análise
+passam a gerar eventos `recognition_*` e respostas com `decision`, sempre com a trava
+engatada. Capturas ruins continuam fora da contagem de bloqueio.
+
+- **Uso normal × testes:** o servidor expõe `engine_kind`; dublês de teste aparecem como
+  `test_double` no status, no Diagnóstico e no ponto de acesso. O uso normal só cria o
+  motor OpenCV.
+- **Trade-off:** mais eventos no histórico (e, no nível `warning`, no webhook opcional).
+  Cancelamentos usam `info` para não gerar alertas.

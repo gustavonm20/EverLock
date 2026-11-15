@@ -1,6 +1,38 @@
 # Estado do projeto
 
-Versão atual do código: **0.16.1**, com o acabamento visual aprovado pelo responsável após a prévia. Mantém a preparação do ensaio facial da 0.16, integrada à `main` no [PR #23](https://github.com/gustavonm20/EverLock/pull/23), com [305 testes gerais e 11 jornadas de navegador aprovados](https://github.com/gustavonm20/EverLock/actions/runs/38686568687). A base 0.15 foi integrada pelo [PR #22](https://github.com/gustavonm20/EverLock/pull/22). As verificações abaixo preservam o histórico e distinguem implementação de validação com pessoas reais. A publicação da 0.16.1 é acompanhada por seu próprio PR e CI; testes locais não antecipam aprovação remota.
+Versão atual do código: **0.18.0 (local, não publicada)**. Base publicada no GitHub: **0.16.1** ([PR #24](https://github.com/gustavonm20/EverLock/pull/24), [CI aprovado](https://github.com/gustavonm20/EverLock/actions/runs/38689712930)). A 0.18.0 não foi enviada ao GitHub nem sincronizada com o Notion; veja a seção abaixo.
+
+## Ponto de acesso facial e acesso pelo próprio rosto (incremento 0.18.0, 15/11/2026 — local)
+
+Numeração: o arquivo recebido para esta etapa (`EverLock-main3.zip`) continha a 0.16.1, idêntica à `main` do GitHub. Nenhum código 0.17 foi encontrado no arquivo nem no GitHub; esta entrega usa 0.18.0 para não ser confundida com uma eventual 0.17.0 local que não fez parte do pacote.
+
+- **Ponto de acesso facial** na Visão geral: câmera com guia de enquadramento, etapas (frente, giro, análise, decisão), quadro grande de **Acesso liberado** / **Acesso negado** com o motivo, contagem até a trava voltar a engatar, botão **Travar agora** e **Decisões recentes** com o total do dia. O teste simulado ficou separado em "Laboratório: teste sem câmera".
+- **Toda tentativa real vira decisão registrada**, sempre com a trava engatada quando não autorizada: captura sem qualidade (`recognition_capture_failed`), cancelamento (`recognition_cancelled`), desafio vencido (`recognition_expired`), excesso de tentativas (`recognition_rate_limited`), motor ausente (`recognition_unavailable`), falha inesperada do OpenCV (`recognition_error`, falha fechada), sessão do operador alterada (`recognition_session_changed`) e recusa da porta após o reconhecimento (`recognition_denied`). As respostas trazem um objeto `decision` estável (`granted`, `code`, `title`, `lock`, `release_seconds`).
+- **Acesso pelo próprio rosto**: o administrador cria a identidade (horário, retenção, ativação) e pode vinculá-la a uma conta ativa. Em **Conta › Meu acesso pela porta**, a própria pessoa lê o termo, registra o aceite, confirma a senha e captura as 5 fotos; também pode apagar o cadastro ou revogar o consentimento. Conta vinculada desativada barra a porta (`account_inactive`). Migração aditiva do banco para a versão 3 (`identities.account_id`, `subject_consent_by`).
+- **Uso normal × teste separados**: o servidor informa `engine_kind` (`opencv`, `unavailable` ou `test_double`). O Diagnóstico e o ponto de acesso mostram "Motor de teste ativo" quando um dublê é injetado. O uso normal (`create_app()` sem argumentos, como no `uvicorn`) sempre carrega o OpenCV local.
+- **Acabamento visual**: camada `refresh.css` com escala tipográfica legível (rótulos ≥ 12 px, leitura 13–14 px; antes havia textos de 7–10 px), foco visível único, estados de botão coerentes, cores semânticas para liberado/negado nos temas claro e escuro e respeito a movimento reduzido. Textos antigos "reconhecimento em preparação" foram corrigidos.
+
+Verificado localmente (Windows, Python 3.13.3): ver totais na seção "Validação da 0.18.0" abaixo. Os testes usam bancos isolados, contas sintéticas, um motor facial falso explicitamente identificado e quadros gerados por código; nenhuma pessoa, foto humana ou câmera física participou. Eles comprovam a ligação reconhecimento → autorização → trava virtual; **não medem precisão facial, desempenho com câmera real nem resistência a ataques de apresentação**.
+
+### Validação da 0.18.0
+
+| Verificação | Base 0.16.1 (pacote recebido) | 0.18.0 |
+|---|---|---|
+| Ruff | aprovado | aprovado |
+| Sintaxe JavaScript (`node --check`) | — | aprovada em todos os scripts |
+| Suíte geral (`pytest -q`) | **305 aprovados** | **324 aprovados** com os modelos reais (`EVERLOCK_TEST_MODELS_DIR`); sem eles, 323 aprovados e 1 ignorado |
+| Jornadas de navegador (`pytest tests/browser`) | **16 aprovadas** | **19 aprovadas** |
+| Migração 2 → 3 em banco existente | — | aprovada (banco de desenvolvimento descartável) |
+
+- O teste do pipeline real carregou YuNet/SFace (SHA-256 conferidos pelo `baixar_modelos.py`) e recusou quadros gerados por código, sem rosto, mantendo a trava engatada.
+- Os 19 testes novos de `test_face_access_flow.py` passaram em três execuções seguidas; as 3 jornadas novas de navegador também.
+- Permanece o aviso do cliente HTTP de testes ([issue #13](https://github.com/gustavonm20/EverLock/issues/13)).
+- Interface conferida por capturas em 1440 px e 390 px, temas claro e escuro, com câmera de canvas gerada. A câmera real deste computador não foi ligada.
+- Não verificado: precisão facial, câmera real, prova de vida, e-mail/n8n reais, nobreak. Nada foi publicado no GitHub nem no Notion.
+
+## Histórico anterior
+
+A 0.16.1 trouxe o acabamento visual aprovado pelo responsável após a prévia. Mantém a preparação do ensaio facial da 0.16, integrada à `main` no [PR #23](https://github.com/gustavonm20/EverLock/pull/23), com [305 testes gerais e 11 jornadas de navegador aprovados](https://github.com/gustavonm20/EverLock/actions/runs/38686568687). A base 0.15 foi integrada pelo [PR #22](https://github.com/gustavonm20/EverLock/pull/22). As verificações abaixo preservam o histórico e distinguem implementação de validação com pessoas reais. A publicação da 0.16.1 é acompanhada por seu próprio PR e CI; testes locais não antecipam aprovação remota.
 
 ## Entregue e verificado
 

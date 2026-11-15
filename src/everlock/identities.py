@@ -97,6 +97,14 @@ def within_schedule(days: str, start: int, end: int, local: datetime) -> bool:
     return False
 
 
+def _field(row, name):
+    """Lê uma coluna opcional de sqlite3.Row ou dict (testes antigos usam dicts simples)."""
+    try:
+        return row[name]
+    except (KeyError, IndexError):
+        return None
+
+
 def evaluate(identity, now: float) -> Decision:
     """Decisão pura de autorização. Não altera nada e não conhece a porta."""
     if identity["consent_revoked_at"] is not None:
@@ -106,6 +114,9 @@ def evaluate(identity, now: float) -> Decision:
         return Decision(False, "retention_expired", "O prazo de retenção terminou.")
     if not identity["active"]:
         return Decision(False, "identity_inactive", "A identidade está desativada.")
+    # Identidade vinculada a uma conta: conta desativada (ou ausente) também barra a porta.
+    if _field(identity, "account_id") is not None and not _field(identity, "account_active"):
+        return Decision(False, "account_inactive", "A conta vinculada está desativada.")
     if not is_enrolled(identity):
         return Decision(False, "not_enrolled", "A identidade ainda não tem cadastro.")
     if not within_schedule(
@@ -157,8 +168,13 @@ class Identities:
                                    f"Identidade #{row['id']} excluída ao fim do prazo de retenção.")
             return len(rows)
 
+    # A conta vinculada (opcional) entra na leitura para a decisão considerar se está ativa.
+    _SELECT = ("SELECT i.*, u.username AS account_username, "
+               "(u.active = 1 AND u.pending = 0 AND u.email_confirmed = 1) AS account_active "
+               "FROM identities i LEFT JOIN users u ON u.id = i.account_id")
+
     def _row(self, identity_id):
-        row = self.db.execute("SELECT * FROM identities WHERE id=?", (identity_id,)).fetchone()
+        row = self.db.execute(f"{self._SELECT} WHERE i.id=?", (identity_id,)).fetchone()
         if row is None:
             raise HTTPException(404, "Identidade não encontrada.")
         return row
@@ -173,17 +189,26 @@ class Identities:
             state = "not_enrolled"
         else:
             state = "ready"
+        account = None
+        if row["account_id"] is not None:
+            account = {"id": row["account_id"], "username": row["account_username"],
+                       "active": bool(row["account_active"])}
         return {
             "id": row["id"], "label": row["label"], "active": bool(row["active"]),
             "state": state, "enrolled_at": row["enrolled_at"],
             "enrollment": "face" if row["face_samples"] else row["enrollment"],
             "face_samples": row["face_samples"],
             "face_consent_ok": row["consent_version"] == CONSENT_VERSION,
+            "account": account,
             "consent": {
                 "version": row["consent_version"], "recorded_by": row["consent_recorded_by"],
                 "granted_at": row["consent_granted_at"], "revoked_at": row["consent_revoked_at"],
                 "subject_confirmed_at": row["subject_consent_at"],
                 "subject_version": row["subject_consent_version"],
+                # "own_account": aceite na sessão da conta vinculada; "admin_session": declaração
+                # presencial na sessão do administrador. Nenhum dos dois verifica a pessoa.
+                "subject_method": row["subject_consent_by"] or (
+                    "admin_session" if row["subject_consent_at"] is not None else None),
             },
             "retention_days": row["retention_days"],
             "expires_at": row["consent_granted_at"] + row["retention_days"] * SECONDS_PER_DAY,
@@ -200,10 +225,75 @@ class Identities:
         with self.mutex:
             self.purge_expired()
             now = self.clock()
-            rows = self.db.execute("SELECT * FROM identities ORDER BY id").fetchall()
+            rows = self.db.execute(f"{self._SELECT} ORDER BY i.id").fetchall()
             return [self._public(row, now) for row in rows]
 
-    def create(self, *, label, retention_days, days, start, end, consent_version, actor):
+    # --- vínculo com a conta da própria pessoa ---------------------------------------------
+
+    def link_account(self, identity_id, account_id, actor):
+        """Vincula (ou desvincula, com None) a identidade a uma conta ativa e confirmada."""
+        with self.mutex:
+            self.purge_expired()
+            row = self._row(identity_id)
+            if account_id is not None:
+                if row["consent_revoked_at"] is not None:
+                    raise HTTPException(409, "O consentimento foi revogado; exclua a identidade "
+                                             "e cadastre de novo.")
+                self._require_linkable(account_id, identity_id)
+            if row["account_id"] == account_id:
+                return self._public(row, self.clock())
+            with self.db:
+                self.db.execute("UPDATE identities SET account_id=? WHERE id=?",
+                                (account_id, identity_id))
+                if account_id is None:
+                    self.audit("identity_unlinked", actor, identity_id,
+                               f"Identidade #{identity_id} desvinculada da conta "
+                               f"#{row['account_id']}.")
+                else:
+                    self.audit("identity_linked", actor, identity_id,
+                               f"Identidade #{identity_id} vinculada à conta #{account_id}: a "
+                               "própria pessoa pode registrar o aceite e o rosto da porta.")
+            return self._public(self._row(identity_id), self.clock())
+
+    def linked_to(self, account_id):
+        with self.mutex:
+            self.purge_expired()
+            row = self.db.execute("SELECT id FROM identities WHERE account_id=?",
+                                  (account_id,)).fetchone()
+            return None if row is None else row["id"]
+
+    def self_view(self, account_id):
+        """O que a própria pessoa vê do seu acesso pela porta, sem dados de outras pessoas."""
+        identity_id = self.linked_to(account_id)
+        base = {"version": CONSENT_VERSION, "purpose": CONSENT_PURPOSE, "text": CONSENT_TEXT}
+        if identity_id is None:
+            return {"linked": False, "policy": base, "identity": None}
+        with self.mutex:
+            public = self._public(self._row(identity_id), self.clock())
+        keys = ("id", "label", "active", "state", "face_samples", "enrolled_at", "consent",
+                "retention_days", "expires_at", "schedule", "access_now", "face_consent_ok")
+        identity = {key: public[key] for key in keys}
+        identity["consent"] = {key: value for key, value in public["consent"].items()
+                               if key != "recorded_by"}
+        return {"linked": True, "policy": base, "identity": identity}
+
+    def _require_linkable(self, account_id, identity_id=None):
+        account = self.db.execute(
+            "SELECT id FROM users WHERE id=? AND active=1 AND pending=0 AND email_confirmed=1",
+            (account_id,),
+        ).fetchone()
+        if account is None:
+            raise HTTPException(404, "Conta não encontrada ou ainda não ativa.")
+        other = self.db.execute(
+            "SELECT id FROM identities WHERE account_id=? AND id IS NOT ?",
+            (account_id, identity_id),
+        ).fetchone()
+        if other is not None:
+            raise HTTPException(409, f"Essa conta já está vinculada à identidade #{other['id']}. "
+                                     "Desvincule-a antes.")
+
+    def create(self, *, label, retention_days, days, start, end, consent_version, actor,
+               account_id=None):
         with self.mutex:
             self.purge_expired()
             if consent_version != CONSENT_VERSION:
@@ -213,20 +303,26 @@ class Identities:
             if self.db.execute("SELECT COUNT(*) FROM identities").fetchone()[0] >= MAX_IDENTITIES:
                 raise HTTPException(409, f"O laboratório suporta até {MAX_IDENTITIES} identidades.")
             day_text, first, last = validate_schedule(days, start, end)
+            if account_id is not None:
+                self._require_linkable(account_id)
             now = self.clock()
             try:
                 with self.db:
                     cursor = self.db.execute(
                         """INSERT INTO identities
                            (label,consent_version,consent_recorded_by,consent_granted_at,
-                            retention_days,days,window_start,window_end,created_by,created_at)
-                           VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                            retention_days,days,window_start,window_end,created_by,created_at,
+                            account_id)
+                           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                         (label, CONSENT_VERSION, actor, now, retention_days, day_text, first,
-                         last, actor, now),
+                         last, actor, now, account_id),
                     )
+                    linked = (f" Vinculada à conta #{account_id}." if account_id is not None
+                              else "")
                     self.audit("identity_created", actor, cursor.lastrowid,
                                f"Identidade #{cursor.lastrowid} criada com consentimento "
-                               f"versão {CONSENT_VERSION}; retenção de {retention_days} dias.")
+                               f"versão {CONSENT_VERSION}; retenção de {retention_days} dias."
+                               f"{linked}")
             except sqlite3.IntegrityError as error:
                 raise HTTPException(409, "Já existe uma identidade com esse apelido.") from error
             return self._public(self._row(cursor.lastrowid), now)
@@ -317,8 +413,9 @@ class Identities:
                            f"Identidade #{identity_id} excluída: apelido, consentimento, "
                            "cadastro e horários foram removidos.")
 
-    def confirm_subject_consent(self, identity_id, version, actor):
-        """Declaração presencial; não é verificação independente de quem clicou."""
+    def confirm_subject_consent(self, identity_id, version, actor, *, self_service=False):
+        """Aceite do titular. Na sessão do administrador é uma declaração presencial; na sessão
+        da conta vinculada é registrado pela própria conta. Nenhum dos dois verifica a pessoa."""
         with self.mutex:
             self.purge_expired()
             row = self._row(identity_id)
@@ -326,14 +423,21 @@ class Identities:
                 raise HTTPException(409, "O consentimento foi revogado.")
             if version != CONSENT_VERSION or row["consent_version"] != CONSENT_VERSION:
                 raise HTTPException(409, "Recarregue o termo atual e confirme novamente.")
+            method = "own_account" if self_service else "admin_session"
             with self.db:
                 self.db.execute(
-                    "UPDATE identities SET subject_consent_at=?, subject_consent_version=? "
-                    "WHERE id=?", (self.clock(), version, identity_id),
+                    "UPDATE identities SET subject_consent_at=?, subject_consent_version=?, "
+                    "subject_consent_by=? WHERE id=?",
+                    (self.clock(), version, method, identity_id),
                 )
-                self.audit("subject_consent_declared", actor, identity_id,
-                           f"Identidade #{identity_id}: aceite presencial declarado do termo "
-                           f"{version}; sem verificação independente do titular.")
+                if self_service:
+                    self.audit("subject_consent_self", actor, identity_id,
+                               f"Identidade #{identity_id}: aceite do termo {version} registrado "
+                               "na sessão da própria conta vinculada.")
+                else:
+                    self.audit("subject_consent_declared", actor, identity_id,
+                               f"Identidade #{identity_id}: aceite presencial declarado do termo "
+                               f"{version}; sem verificação independente do titular.")
             return self._public(self._row(identity_id), self.clock())
 
     def require_subject_consent(self, identity_id):

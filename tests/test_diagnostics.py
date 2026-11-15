@@ -89,7 +89,11 @@ def test_diagnostics_does_not_contact_configured_services_or_expose_secrets(lab)
         "smtp.private.example", 587, "private-user", "private-password", "private-sender",
     ), "https://private.example")
     app.state.notifier = Notifier("https://private.example/private-token", "private-secret")
+    # Sem marca "opencv", um motor disponível é dublê de teste e aparece como atenção.
     app.state.recognition.engine = SimpleNamespace(available=True)
+    double = items(client.get("/api/diagnostics"))["face_engine"]
+    assert double["status"] == "attention" and double["summary"] == "Motor de teste ativo"
+    app.state.recognition.engine = SimpleNamespace(available=True, kind="opencv")
     app.state.face_login.vault = SimpleNamespace(available=False)
     response = client.get("/api/diagnostics")
     checks = items(response)

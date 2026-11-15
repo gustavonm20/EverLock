@@ -160,7 +160,7 @@
     const remaining = Math.max(0, Number(door.release_remaining_seconds) || 0);
     const remainingLabel = `${remaining.toFixed(1).replace(".", ",")} s`;
 
-      elements.version.textContent = state.version || "0.16.1";
+    elements.version.textContent = state.version || "0.18.0";
     elements["door-position"].textContent = isOpen ? "Aberta" : "Fechada";
     elements["door-hint"].textContent = isOpen ? "Feche para concluir o acesso" : "Posição confirmada no simulador";
     elements["lock-position"].textContent = released ? "Liberada" : pending ? "Aguardando" : "Engatada";
@@ -174,13 +174,14 @@
     elements["door-summary"].textContent = isOpen ? "Porta aberta" : released ? "Entrada liberada" : "Porta fechada · trava engatada";
     elements["scene-description"].textContent = isOpen
       ? "A porta precisa ser fechada para concluir o acesso."
-      : released ? "Use “Abrir / entrar” antes que a liberação termine." : "Acesso facial em preparação. Comandos remotos e acesso manual ficam nas áreas próprias.";
+      : released ? "Use “Abrir / entrar” antes que a liberação termine." : "A trava só libera depois de uma autorização do servidor: rosto reconhecido, comando remoto ou chave manual.";
     elements["release-description"].textContent = state.device.status !== "online"
       ? "Dispositivo virtual indisponível; acesso manual disponível."
       : released ? `Entrada liberada por mais ${remainingLabel} virtuais${state.simulation.paused ? " (tempo pausado)" : ""}.`
-        : "A trava só será liberada após autorização. O reconhecimento facial ainda está em preparação.";
+        : "Trava engatada. Ela só libera após uma autorização conferida pelo servidor.";
     updatePower(state);
     setConnection(true);
+    document.dispatchEvent(new CustomEvent("everlock-state", { detail: state }));
   }
 
   async function updateStatus() {

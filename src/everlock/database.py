@@ -2,7 +2,7 @@
 
 import sqlite3
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 BASE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS door_state (
     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -182,7 +182,16 @@ def _operational(db: sqlite3.Connection) -> None:
     db.execute("ALTER TABLE identities ADD COLUMN subject_consent_version TEXT")
 
 
-MIGRATIONS = (_baseline, _operational)
+def _account_link(db: sqlite3.Connection) -> None:
+    # Vínculo opcional identidade -> conta (uma por conta), para o próprio titular registrar o
+    # aceite e cadastrar o rosto da porta. A identidade continua sendo um registro separado.
+    db.execute("ALTER TABLE identities ADD COLUMN account_id INTEGER")
+    db.execute("ALTER TABLE identities ADD COLUMN subject_consent_by TEXT")
+    db.execute("CREATE UNIQUE INDEX IF NOT EXISTS identity_account ON identities(account_id) "
+               "WHERE account_id IS NOT NULL")
+
+
+MIGRATIONS = (_baseline, _operational, _account_link)
 
 
 def migrate(db: sqlite3.Connection) -> None:

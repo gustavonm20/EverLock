@@ -76,6 +76,16 @@ deixe essa variável ausente para utilizar o Chromium instalado pelo Playwright.
 14. Navegação, foco e estilo dos efeitos são conferidos com e sem movimento reduzido.
     As duas jornadas de cadastro também conferem largura e capturas em 1440 px/claro
     e 390 px/escuro, sem imagens pessoais.
+15. Ponto de acesso (0.18): a pessoa vinculada cadastra o próprio rosto em Conta
+    com câmera de canvas gerada; o administrador reconhece no ponto de acesso, vê
+    **Acesso liberado**, a trava liberada e, sem intervenção, a trava engatada de novo.
+16. Rosto desconhecido aparece como **Acesso negado** com o motivo e a trava engatada;
+    **Travar agora** encerra uma liberação concedida imediatamente.
+17. Conta comum não vê o ponto de acesso e as páginas Visão geral e Conta cabem em
+    390 px e 1440 px sem rolagem horizontal.
+
+Essas três jornadas usam o `FakeFaceEngine` (dublê identificado) só para traduzir as
+capturas sintéticas em vetores; servidor, autorização, trava e interface são os reais.
 
 Os testes aguardam respostas e estados da interface, sem pausas fixas para sincronizar
 ações. Os testes de progresso controlam somente as pausas de captura, para conferir

@@ -148,6 +148,40 @@ Na verificação facial real, o servidor não mantém a trava global durante a l
 
 `POST /api/recognition/simulate` recebe `{"scenario": "match", "identity_id": 3}` ou `{"scenario": "no_match"}`. Responde sempre com `simulated: true`, `code`, `message` e `state`. Recusa retorna 409 com o motivo (`consent_revoked`, `identity_inactive`, `not_enrolled`, `outside_schedule`, `no_match`, `door_open`, `device_powered_off`, `already_released`); identidade inexistente, 404. Regras completas em [identities.md](identities.md).
 
+## Ponto de acesso facial e acesso pelo próprio rosto (0.18)
+
+`POST /api/recognition/challenge`, `POST /api/recognition/verify` e
+`DELETE /api/recognition/challenge/{id}` exigem administrador. Toda resposta de
+verificação traz, além de `ok`, `code`, `message`, `identity_id` e `state`:
+
+```json
+{"decision": {"granted": true, "code": "authorized", "title": "Acesso liberado",
+              "lock": "released", "release_seconds": 3.0}}
+```
+
+Recusas mantêm `granted: false` e `lock: "engaged"`. `GET /api/faces/status` informa
+`engine_kind` (`opencv`, `unavailable` ou `test_double`), `test_double` e
+`release_seconds`. Os códigos e eventos estão em [facial-recognition.md](facial-recognition.md#ponto-de-acesso-facial-018).
+
+Vínculo (administrador): `POST /api/identities` aceita `account_id` opcional;
+`PUT /api/identities/{id}/account` com `{"account_id": 5}` vincula e com
+`{"account_id": null}` desvincula. Só contas ativas e confirmadas; uma identidade por
+conta (409). A identidade pública ganha `account` (`id`, `username`, `active`) e
+`consent.subject_method` (`own_account` ou `admin_session`).
+
+Própria pessoa (qualquer conta logada, somente a identidade vinculada a ela):
+
+| Método e rota | Corpo | Efeito |
+|---|---|---|
+| `GET /api/me/door-access` | — | `linked`, `identity` (estado, horário, retenção, aceite, amostras, `access_now`), `policy` e `engine` |
+| `POST /api/me/door-access/consent` | `{"accepted": true, "version": "2026-10-01"}` | registra o aceite pela própria conta |
+| `POST /api/me/door-access/face` | `{"password": "...", "images": [3 a 5]}` | confirma a senha e grava só vetores cifrados |
+| `DELETE /api/me/door-access/face` | — | apaga o cadastro facial da porta |
+| `POST /api/me/door-access/revoke` | — | revoga o consentimento e apaga os vetores |
+
+Sem vínculo: 404. Senha errada: 403. Sem aceite atual: 409. Uma conta comum continua
+sem acesso a `/api/recognition/*`, a `/api/identities/*` e à liberação direta da trava.
+
 ## Nobreak real
 
 `/api/ups` retorna `source: "external_equipment"`, `status: "not_monitored"`, `observation: null` e `controls_available: false`. O equipamento alimenta o computador e não será integrado ao software. A API nunca usa a bateria virtual para preencher leituras reais.

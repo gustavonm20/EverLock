@@ -37,6 +37,7 @@ from everlock.notifications_api import router as notifications_router
 from everlock.observability import RequestBoundary
 from everlock.outbox import DurableNotifier
 from everlock.recognition import Recognition
+from everlock.self_access_api import router as self_access_router
 from everlock.storage import Storage
 
 WEB_DIR = Path(__file__).parent / "web"
@@ -130,6 +131,8 @@ def create_app(
                 app.state.controller, app.state.accounts, command_clock, session_clock,
             )
             vault = TemplateVault(db_path.parent / "biometria.chave")
+            # Uso normal: sempre o pipeline OpenCV local. Só testes automatizados injetam um
+            # motor substituto, e ele aparece como "test_double" no status e no diagnóstico.
             engine = face_engine or OpenCVFaceEngine(db_path.parent / "models")
             app.state.identities = Identities(storage.connection, app.state.controller.mutex,
                                               session_clock, vault)
@@ -209,6 +212,7 @@ def create_app(
     app.include_router(notifications_router)
     app.include_router(diagnostics_router)
     app.include_router(history_router)
+    app.include_router(self_access_router)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, error: RequestValidationError):

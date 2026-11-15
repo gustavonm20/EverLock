@@ -40,12 +40,18 @@ class LocalServer:
 
 
 @pytest.fixture
-def local_server(tmp_path):
+def face_engine():
+    """Por padrão a bateria não processa imagens; um módulo pode trocar por um dublê."""
+    return UnavailableFaceEngine()
+
+
+@pytest.fixture
+def local_server(tmp_path, face_engine):
     session_time = [time.time()]
     app = create_app(
         tmp_path / "browser.sqlite3",
         session_clock=lambda: session_time[0],
-        face_engine=UnavailableFaceEngine(),
+        face_engine=face_engine,
         mailer=Mailer(None, "http://127.0.0.1"),
         notifier=Notifier(),
     )

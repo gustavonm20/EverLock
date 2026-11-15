@@ -42,6 +42,8 @@ O pacote inclui todo o código-fonte, interface, testes e documentação desta e
 - Mostra a porta e a trava virtuais em uma interface em português.
 - O painel remoto simulado libera a entrada por três segundos virtuais e permite engatar a trava.
 - Reconhece identidades por câmera com OpenCV, exige desafio de movimento e consulta a autorização antes de liberar a trava virtual.
+- Oferece um **ponto de acesso facial** com resultado claro (acesso liberado ou negado, com o motivo), contagem até a trava engatar de novo, **Travar agora** e decisões recentes; toda tentativa, inclusive captura ruim, cancelamento ou motor ausente, fica no histórico com a trava engatada.
+- Permite que a própria pessoa, com a conta vinculada a uma identidade, registre o aceite e cadastre o rosto da porta em **Conta › Meu acesso pela porta**, além de apagar o cadastro ou revogar o consentimento.
 - Impede a abertura externa quando a trava está engatada.
 - Permite fechar a porta, usar a chave simulada e demonstrar a saída interna.
 - Registra ações e resultados no banco local.
@@ -124,7 +126,7 @@ Execute na pasta do projeto, depois da instalação:
 .\.venv\Scripts\python.exe -m ruff check .
 ```
 
-Os testes cobrem porta, energia, relógio, migração, recuperação, autenticação, papéis, revogação, comandos, conflitos, falhas de conexão, consentimento, retenção, horários, reconhecimento simulado e fluxos faciais com motor falso, além de avaliação 1:N e cenários integrados. Eles não medem precisão facial com pessoas reais. Também verificam que o aviso do nobreak não apresenta a bateria virtual como leitura real. Os testes do módulo antigo de observações permanecem isolados; ele não é usado pelo aplicativo. A verificação visual no navegador complementa esses testes.
+Os testes cobrem porta, energia, relógio, migração, recuperação, autenticação, papéis, revogação, comandos, conflitos, falhas de conexão, consentimento, retenção, horários, reconhecimento simulado e fluxos faciais com motor falso, além de avaliação 1:N, cenários integrados e o fluxo de ponta a ponta reconhecimento → autorização → trava (`tests/test_face_access_flow.py`). Um teste opcional exercita o OpenCV real com quadros gerados por código quando `EVERLOCK_TEST_MODELS_DIR` aponta para os modelos. Eles não medem precisão facial com pessoas reais. Também verificam que o aviso do nobreak não apresenta a bateria virtual como leitura real. Os testes do módulo antigo de observações permanecem isolados; ele não é usado pelo aplicativo. A verificação visual no navegador complementa esses testes.
 
 ## Documentação
 
@@ -140,6 +142,8 @@ Os testes cobrem porta, energia, relógio, migração, recuperação, autentica�
 - [Testes de interface no navegador](docs/testes-interface.md)
 - [Regras de colaboração no projeto](AGENTS.md)
 - [Skills do EverLock: instalação e uso](docs/skills.md)
+- [Atualização 0.18 (local) e migração do banco](docs/atualizacao-018.md)
+- [Relatório de progresso (inglês)](docs/progress-report.md)
 - [Atualização 0.15 e compatibilidade](docs/atualizacao-015.md)
 - [Identidades, consentimento e reconhecimento simulado](docs/identities.md)
 - [Reconhecimento facial e limites](docs/facial-recognition.md)
