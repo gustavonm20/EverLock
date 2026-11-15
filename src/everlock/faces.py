@@ -58,6 +58,7 @@ class FaceEngine(Protocol):
 class UnavailableEngine:
     available, model_id = False, "nenhum"
     reason_code = "unavailable"
+    kind = "unavailable"
 
     def __init__(self, reason: str):
         self.reason = reason
@@ -67,7 +68,10 @@ class UnavailableEngine:
 
 
 class OpenCVFaceEngine:
+    """Pipeline real do uso normal: YuNet (detecção) + SFace (vetor), tudo local."""
+
     model_id = "yunet-2023mar+sface-2021dec"
+    kind = "opencv"
 
     def __init__(self, models_dir: Path):
         self.models_dir = Path(models_dir)

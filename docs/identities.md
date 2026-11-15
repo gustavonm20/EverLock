@@ -20,6 +20,16 @@ Contas (`users`) autenticam quem opera o laboratório. Identidades (`identities`
 
 O campo `label` é um **apelido ou código** (2 a 40 caracteres: letras, números, espaço, ponto, hífen ou apóstrofo), não um nome completo. É único sem diferenciar maiúsculas de minúsculas.
 
+## Vínculo com a conta e aceite pela própria pessoa (0.18)
+
+O administrador pode vincular uma identidade a uma conta ativa e confirmada (uma por
+conta). A identidade continua sendo um registro separado; o vínculo só permite que a
+própria pessoa, em **Conta › Meu acesso pela porta**, registre o aceite, cadastre o rosto
+(com a senha atual), apague o cadastro ou revogue o consentimento. Horário, retenção e
+ativação continuam com o administrador. Se a conta vinculada for desativada, a porta
+recusa a identidade (`account_inactive`). O aceite registrado assim fica marcado como
+`own_account`; não é verificação independente de quem estava diante do teclado.
+
 ## Consentimento
 
 O texto e a versão atual (`2026-10-01`) vêm de `GET /api/identities/policy`. Para cadastrar, o administrador confirma que a pessoa foi informada e concordou; a API exige `consent: true` e a versão vigente do texto. Se o texto mudar enquanto a tela está aberta, o cadastro é recusado (409) até que ela seja recarregada. São registrados: versão, quem registrou e quando. O termo anterior (`2026-09-29`) não cobria vetores faciais: uma identidade antiga precisa ser recriada com o termo vigente antes do cadastro facial.

@@ -52,12 +52,15 @@
     } catch { return; }
     const title = byId("face-entry-title"), text = byId("face-entry-text");
     byId("face-live").hidden = !status.available;
+    renderEngine();
     if (status.available) {
       title.textContent = "Reconhecimento facial por câmera";
-      text.textContent = `Motor: ${status.model}. A câmera pede um giro curto do rosto antes de reconhecer. As imagens são descartadas logo após a análise. Reconhecer só libera a trava virtual; para entrar, use “Abrir / entrar”.`;
+      text.textContent = status.test_double
+        ? "Atenção: esta instância usa um motor de testes automatizados. O uso normal carrega o pipeline OpenCV local."
+        : `Modelos ${status.model}. A câmera pede um giro curto do rosto antes de comparar. As imagens são analisadas na memória e descartadas; liberar não abre a porta.`;
     } else {
       title.textContent = "Reconhecimento por câmera indisponível";
-      text.textContent = `${status.reason} O teste simulado abaixo continua funcionando. Abrir este painel não liga a câmera nem libera a porta.`;
+      text.textContent = `${status.reason} Sem o motor, a porta não libera por rosto (falha fechada). O acesso manual continua disponível.`;
     }
   }
 
@@ -143,22 +146,131 @@
 
   byId("face-enroll-cancel").addEventListener("click", () => { stopAll(); if (returnFocus?.isConnected) returnFocus.focus(); });
 
-  // --- reconhecimento na tela principal -----------------------------------------------------
+  // --- ponto de acesso facial na tela principal ------------------------------------------------
+  // A decisão é sempre do servidor: esta tela só mostra o que ele respondeu e o estado da trava.
   const verifyResult = byId("face-verify-result");
+  const frame = byId("camera-frame"), steps = byId("access-steps");
+  const decisionBox = byId("access-decision"), decisionTitle = byId("access-decision-title");
+  const timeFormat = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  let decisionShownAt = 0, recentSession = 0;
+
+  function setStep(name) {
+    const order = ["front", "turn", "analyze", "decision"];
+    const current = order.indexOf(name);
+    for (const item of steps.querySelectorAll("li")) {
+      const index = order.indexOf(item.dataset.step);
+      item.dataset.state = current < 0 ? "waiting" : index < current ? "done" : index === current ? "current" : "waiting";
+      if (index === current) item.setAttribute("aria-current", "step"); else item.removeAttribute("aria-current");
+    }
+  }
+
+  function showDecision(outcome, title, message) {
+    const last = steps.querySelector('li[data-step="decision"]');
+    if (last.dataset.state === "current") last.dataset.state = outcome;
+    decisionBox.dataset.outcome = outcome;
+    decisionTitle.textContent = title;
+    verifyResult.textContent = message;
+    verifyResult.dataset.outcome = outcome === "granted" ? "success" : outcome === "denied" ? "denied" : "";
+    frame.dataset.state = outcome === "granted" || outcome === "denied" ? outcome : frame.dataset.state;
+    if (outcome === "granted" || outcome === "denied") decisionShownAt = Date.now();
+  }
+
+  function resetDecision(message) {
+    setStep(null);
+    frame.dataset.state = isOn(byId("face-verify-video")) ? "ready" : "off";
+    decisionBox.dataset.outcome = "idle";
+    decisionTitle.textContent = "Trava engatada";
+    verifyResult.textContent = message;
+    verifyResult.dataset.outcome = "";
+  }
+
+  function renderEngine() {
+    const badge = byId("access-engine");
+    const kind = status.engine_kind || "unknown";
+    badge.dataset.kind = status.test_double ? "test" : status.available ? "real" : "off";
+    badge.textContent = status.test_double ? "Motor de TESTE (não reconhece rostos reais)"
+      : status.available ? "Motor local OpenCV" : kind === "opencv" ? "Motor OpenCV sem modelos" : "Motor indisponível";
+  }
+
+  // Contagem da liberação e estado da trava: vêm do estado oficial publicado por app.js.
+  document.addEventListener("everlock-state", (event) => {
+    const door = event.detail.door, simulation = event.detail.simulation;
+    const released = door.lock === "released";
+    const remaining = Math.max(0, Number(door.release_remaining_seconds) || 0);
+    const meter = byId("release-meter");
+    meter.hidden = !released;
+    if (released) {
+      const total = Number(status.release_seconds) || 3;
+      byId("release-meter-bar").style.setProperty("--progress", String(Math.min(1, remaining / total)));
+      byId("release-meter-label").textContent = `Trava volta a engatar em ${remaining.toFixed(1).replace(".", ",")} s virtuais${simulation.paused ? " (relógio pausado)" : ""}`;
+    }
+    byId("access-lock-state").textContent = released
+      ? "Trava virtual LIBERADA. A porta continua fechada até alguém usar Abrir / entrar."
+      : door.lock === "pending_close" ? "Porta aberta: a trava engata quando a porta for fechada."
+        : "Trava virtual engatada.";
+    byId("access-lock-state").dataset.lock = door.lock;
+    // Depois da liberação concedida, o painel volta a mostrar a trava engatada.
+    if (!released && decisionBox.dataset.outcome === "granted" && Date.now() - decisionShownAt > 1500) {
+      decisionBox.dataset.outcome = "relocked";
+      decisionTitle.textContent = "Trava engatada novamente";
+      verifyResult.textContent = "A liberação terminou e a trava virtual voltou à posição de repouso.";
+      frame.dataset.state = isOn(byId("face-verify-video")) ? "ready" : "off";
+    }
+  });
+
+  async function loadRecent() {
+    if (!isAdmin()) return;
+    const session = sessionGeneration;
+    const today = new Date();
+    const day = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    try {
+      const { ok, value } = await api(`events?source=recognition&since=${day}&limit=100`);
+      if (!ok || session !== sessionGeneration || !isAdmin()) return;
+      const items = value.items;
+      const granted = items.filter((item) => item.outcome === "success").length;
+      const denied = items.filter((item) => item.outcome === "denied").length;
+      byId("access-today").textContent = `Hoje: ${granted} ${granted === 1 ? "liberação" : "liberações"} · ${denied} ${denied === 1 ? "recusa" : "recusas"}${value.has_more ? " (últimas 100)" : ""}`;
+      const list = byId("access-recent");
+      if (!items.length) {
+        const empty = document.createElement("li");
+        empty.className = "empty-state"; empty.textContent = "Nenhuma decisão hoje.";
+        list.replaceChildren(empty);
+        return;
+      }
+      list.replaceChildren(...items.slice(0, 6).map((item) => {
+        const row = document.createElement("li");
+        row.dataset.outcome = item.outcome;
+        const time = document.createElement("time");
+        time.dateTime = item.created_at; time.textContent = timeFormat.format(new Date(item.created_at));
+        const label = document.createElement("span");
+        label.className = "recent-outcome";
+        label.textContent = item.outcome === "success" ? "Liberado" : item.outcome === "denied" ? "Negado" : "Info";
+        const title = document.createElement("span");
+        title.className = "recent-title"; title.textContent = item.title;
+        row.append(time, label, title);
+        return row;
+      }));
+    } catch { /* lista auxiliar: falhas não afetam o ponto de acesso */ }
+  }
+
   byId("face-camera-toggle").addEventListener("click", async () => {
     const video = byId("face-verify-video"), toggle = byId("face-camera-toggle");
     if (!isAdmin() || cameraStarting) return;
-    if (isOn(video)) { stopAll(); return; }
+    if (isOn(video)) { stopAll(); resetDecision("Câmera desligada. Nenhuma imagem foi enviada."); return; }
     stopAll();
     const session = generation;
     cameraStarting = true; toggle.disabled = true;
+    frame.dataset.state = "starting";
     try {
       await startCamera(video);
       if (session !== generation) { stopCamera(video); return; }
       toggle.textContent = "Desligar câmera"; byId("face-verify").disabled = false;
-      verifyResult.textContent = "Câmera ligada. Fique de frente e clique em Reconhecer."; verifyResult.dataset.outcome = "";
+      resetDecision("Câmera ligada. Centralize o rosto no guia e selecione Reconhecer e liberar.");
     } catch (error) {
-      if (session === generation) { verifyResult.textContent = error.message; verifyResult.dataset.outcome = "denied"; }
+      if (session === generation) {
+        frame.dataset.state = "off";
+        showDecision("denied", "Câmera indisponível", error.message);
+      }
     } finally { cameraStarting = false; toggle.disabled = false; }
   });
 
@@ -170,13 +282,18 @@
     const current = () => session === generation && isAdmin() && isOn(video) && !document.hidden;
     let challengeId = null;
     try {
+      frame.dataset.state = "working";
+      decisionBox.dataset.outcome = "working";
+      decisionTitle.textContent = "Reconhecendo…";
+      setStep("front");
       verifyResult.textContent = "Preparando o desafio de movimento…";
       const challengeReply = await api("recognition/challenge", "POST", {});
       challengeId = challengeReply.value.challenge_id || null;
       if (!current()) { cancelChallenge(challengeId); return; }
       if (!challengeReply.ok) {
-        verifyResult.textContent = challengeReply.value.message || "Não foi possível iniciar o desafio.";
-        verifyResult.dataset.outcome = "denied";
+        setStep("decision");
+        const decision = challengeReply.value.decision;
+        showDecision("denied", decision?.title || "Acesso negado", challengeReply.value.message || "Não foi possível iniciar o desafio.");
         return;
       }
       activeChallenge = challengeId;
@@ -184,33 +301,55 @@
       await pause(650);
       if (!current()) return;
       const front = capture(video), turned = [];
+      setStep("turn");
       verifyResult.textContent = challengeReply.value.instruction;
-      for (let frame = 0; frame < 6; frame += 1) {
+      for (let shot = 0; shot < 6; shot += 1) {
         await pause(300);
         if (!current()) return;
         turned.push(capture(video));
       }
-      verifyResult.textContent = "Analisando o rosto e o movimento…";
+      setStep("analyze");
+      verifyResult.textContent = "Analisando o rosto e o movimento neste computador…";
       const { ok, value } = await api("recognition/verify", "POST", {
         challenge_id: challengeId, front, turned,
       });
       if (!current()) return;
+      setStep("decision");
+      const decision = value.decision || { granted: ok, title: ok ? "Acesso liberado" : "Acesso negado" };
       const detail = typeof value.detail === "string" ? value.detail : "";
-      verifyResult.textContent = ok ? `${value.message || "Reconhecido."}` : (value.message || detail || "Não foi possível reconhecer.");
-      verifyResult.dataset.outcome = ok ? "success" : "denied";
+      if (ok && decision.granted) {
+        showDecision("granted", `${decision.title} · identidade #${value.identity_id}`,
+          `${value.message || "Reconhecido."} Use Abrir / entrar antes do fim do prazo.`);
+      } else {
+        const reason = value.message || detail || "Não foi possível reconhecer.";
+        showDecision("denied", decision.title || "Acesso negado", /trava permanece engatada/i.test(reason) ? reason : `${reason} A trava permanece engatada.`);
+      }
       document.dispatchEvent(new Event("everlock-identities-changed"));
     } catch (error) {
       cancelChallenge(challengeId);
-      if (current()) { verifyResult.textContent = error.name === "CameraError" ? error.message : "Falha ao falar com o servidor local."; verifyResult.dataset.outcome = "denied"; }
+      if (current()) {
+        setStep("decision");
+        showDecision("denied", "Acesso negado", error.name === "CameraError" ? error.message : "Falha ao falar com o servidor local. A trava permanece engatada.");
+      }
     } finally {
       if (activeChallenge === challengeId) activeChallenge = null;
       if (session === generation) { busy = false; button.disabled = !isOn(video); }
+      loadRecent();
     }
   });
 
   // Fecha a câmera ao trocar de sessão, de página ou de aba: nunca fica ligada sem uso.
-  document.addEventListener("everlock-session", () => { sessionGeneration += 1; stopAll(); loadStatus(); });
-  window.addEventListener("hashchange", stopAll);
+  document.addEventListener("everlock-session", () => {
+    sessionGeneration += 1; recentSession = sessionGeneration;
+    stopAll(); resetDecision("Ligue a câmera e selecione Reconhecer. O sistema pedirá um giro curto do rosto.");
+    loadStatus(); loadRecent();
+  });
+  window.addEventListener("hashchange", () => {
+    if (isOn(byId("face-verify-video")) || activeChallenge) resetDecision("Câmera desligada ao trocar de página. Nenhuma imagem foi enviada.");
+    stopAll();
+    if (location.hash === "#simulador" || location.hash === "") loadRecent();
+  });
   document.addEventListener("visibilitychange", () => { if (document.hidden) stopAll(); });
   window.addEventListener("pagehide", stopAll);
+  window.setInterval(() => { if (!document.hidden && recentSession === sessionGeneration && isAdmin()) loadRecent(); }, 15000);
 })();

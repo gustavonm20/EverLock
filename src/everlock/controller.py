@@ -215,7 +215,16 @@ class Controller:
                     source="recognition",
                 )
             except Denied as error:
-                return self._denied(error)
+                # Registrado como decisão do reconhecimento: identidade, motivo e trava mantida.
+                self._commit(*self._copy(), [Event(
+                    "recognition_denied", "Acesso facial não aplicado pela porta",
+                    f"Identidade {reference}: {error.message} A liberação por reconhecimento "
+                    "não foi aplicada.", "recognition", "denied",
+                )])
+                return 409, {
+                    "ok": False, "code": error.code, "message": error.message,
+                    "state": self._status(),
+                }
             self._commit(door, power, timeline, [event])
             return self._success(event.detail)
 

@@ -8,7 +8,7 @@
     inactive: "Desativada", revoked: "Consentimento revogado",
   };
   const isAdmin = () => document.body.dataset.role === "admin";
-  let generation = 0, busy = false, policy = null, signature = "";
+  let generation = 0, busy = false, policy = null, signature = "", accounts = [];
 
   const dateText = (seconds) => new Date(seconds * 1000).toLocaleDateString("pt-BR");
   const feedback = (text, outcome = "info") => {
@@ -99,6 +99,14 @@
       element("p", `Agora: ${item.access_now.message}`),
     );
     if (item.face_samples) card.append(element("p", `Cadastro facial: ${item.face_samples} amostras (somente vetores cifrados; nenhuma imagem guardada).`));
+    const subject = item.consent.subject_confirmed_at
+      ? `Aceite do titular em ${dateText(item.consent.subject_confirmed_at)}: ${item.consent.subject_method === "own_account" ? "registrado pela própria conta vinculada" : "declarado na sessão do administrador"}.`
+      : "Aceite do titular ainda não registrado.";
+    card.append(element("p", subject));
+    const link = element("p", item.account
+      ? `Conta vinculada: ${item.account.username}${item.account.active ? "" : " (desativada — a porta recusa)"}. A pessoa gerencia o próprio rosto em Conta.`
+      : "Sem conta vinculada: o cadastro facial é conduzido nesta tela.", "identity-link");
+    card.append(link);
     const actions = element("div", undefined, "identity-actions");
     const target = `identities/${item.id}`;
     if (item.enrollment !== "none") {
@@ -131,6 +139,22 @@
         if (!window.confirm("Revogar apaga o cadastro e os vetores faciais, e bloqueia novos testes. Continuar?")) return;
         perform(() => api(`${target}/consent/revoke`, "POST"), "Consentimento revogado e cadastro apagado.");
       }));
+    }
+    if (item.account) {
+      actions.append(actionButton("Desvincular conta", () => perform(
+        () => api(`${target}/account`, "PUT", { account_id: null }), "Conta desvinculada. O cadastro facial existente foi mantido.",
+      )));
+    } else if (item.state !== "revoked") {
+      const linked = new Set(lastItems.filter((other) => other.account).map((other) => other.account.id));
+      const free = accounts.filter((account) => !linked.has(account.id));
+      if (free.length) {
+        const select = element("select", undefined, "identity-link-select");
+        select.setAttribute("aria-label", `Conta para vincular à identidade #${item.id}`);
+        select.append(...free.map((account) => { const option = element("option", account.username); option.value = String(account.id); return option; }));
+        actions.append(select, actionButton("Vincular conta", () => perform(
+          () => api(`${target}/account`, "PUT", { account_id: Number(select.value) }), "Conta vinculada. A pessoa já pode registrar o aceite e o rosto em Conta.",
+        )));
+      }
     }
     actions.append(actionButton("Excluir identidade", () => {
       if (!window.confirm("Excluir remove o apelido, o consentimento, o cadastro e os horários. Continuar?")) return;
@@ -170,7 +194,20 @@
     }
   });
 
+  let lastItems = [];
+  function renderAccountChoices(items) {
+    const select = byId("identity-account"), previous = select.value;
+    const linked = new Set(items.filter((item) => item.account).map((item) => item.account.id));
+    const free = accounts.filter((account) => !linked.has(account.id));
+    select.replaceChildren(element("option", "Sem vínculo — o administrador conduz o cadastro"));
+    select.firstChild.value = "";
+    select.append(...free.map((account) => { const option = element("option", `${account.username} (${account.role === "admin" ? "administrador" : "usuário"})`); option.value = String(account.id); return option; }));
+    if (free.some((account) => String(account.id) === previous)) select.value = previous;
+  }
+
   function render(items, events) {
+    lastItems = items;
+    renderAccountChoices(items);
     renderFaceEntry(items);
     const list = byId("identity-list");
     if (!items.length) {
@@ -201,9 +238,10 @@
     const session = generation;
     try {
       await loadPolicy();
-      const [{ value: list }, { value: events }] = await Promise.all([api("identities"), api("identities/events")]);
+      const [{ value: list }, { value: events }, { value: users }] = await Promise.all([api("identities"), api("identities/events"), api("auth/users")]);
       if (session !== generation) return;
-      const next = JSON.stringify([list.items, events.items]);
+      accounts = users.items.filter((user) => user.active && user.email_confirmed && !user.pending);
+      const next = JSON.stringify([list.items, events.items, accounts]);
       if (next !== signature || force) {
         signature = next;
         render(list.items, events.items);
@@ -241,12 +279,15 @@
         retention_days: Number(form.elements.retention_days.value),
         consent: form.elements.consent.checked,
         consent_version: policy.version,
+        ...(form.elements.account_id.value ? { account_id: Number(form.elements.account_id.value) } : {}),
         ...schedule,
       })).value;
       form.reset();
       byId("identity-custom").hidden = true;
       return created;
-    }, (created) => `Identidade #${created.id} cadastrada, ainda sem cadastro. Use “Cadastrar rosto (câmera)” ou o cadastro simulado.`);
+    }, (created) => created.account
+      ? `Identidade #${created.id} cadastrada e vinculada a ${created.account.username}. A pessoa registra o próprio aceite e o rosto em Conta › Meu acesso pela porta.`
+      : `Identidade #${created.id} cadastrada, ainda sem cadastro. Use “Cadastrar rosto (câmera)” ou o cadastro simulado.`);
   });
 
   byId("simulate-unknown").addEventListener("click", () => perform(
@@ -255,7 +296,7 @@
 
   function reset() {
     generation += 1;
-    busy = false; policy = null; signature = "";
+    busy = false; policy = null; signature = ""; accounts = []; lastItems = [];
     byId("identity-form").reset();
     byId("identity-custom").hidden = true;
     byId("identity-list").replaceChildren();

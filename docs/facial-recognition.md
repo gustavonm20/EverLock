@@ -65,11 +65,53 @@ A câmera funciona em `http://127.0.0.1:8000` porque o navegador trata esse ende
 - **Cancelamento e sessão:** o desafio pertence à sessão que o pediu. Desligar a câmera, trocar de página ou aba solicita seu encerramento; novo desafio da mesma sessão invalida o anterior. A sessão e o prazo são rechecados depois da análise, imediatamente antes de liberar a trava. Uma resposta tardia não altera a tela de outra operação.
 - **Limite de similaridade: 0,45.** A documentação do SFace cita 0,363 como ponto de equilíbrio; para acesso, o padrão é mais rígido (menos falsas aceitações, mais falsas rejeições).
 - **Margem de ambiguidade: 0,05.** Se o rosto passa do limite para duas identidades quase ao mesmo tempo, é recusado (`ambiguous`).
-- **Bloqueio:** 5 reconhecimentos sem sucesso em 60 s bloqueiam novas tentativas por até 60 s (`rate_limited`), inclusive para o rosto certo. Problemas de captura (sem rosto, borrado, dois rostos) **não** contam: não são tentativas de acesso.
+- **Bloqueio:** 5 reconhecimentos sem sucesso em 60 s bloqueiam novas tentativas por até 60 s (`rate_limited`), inclusive para o rosto certo. Problemas de captura (sem rosto, borrado, dois rostos) **não** contam para o bloqueio, mas desde a 0.18 ficam no histórico como decisão negada (`recognition_capture_failed`).
 - Reconhecido mas não autorizado (horário, desativada, consentimento) mantém a trava engatada e registra a identidade e o motivo.
 - Autorizado: libera a trava por 3 segundos virtuais. **A porta não abre sozinha.** Eventos citam só `Identidade #n` e a similaridade.
 
 > Todos os limites ficam em `FaceSettings` (`recognition.py`) e `faces.py` e são **provisórios**. O [protocolo de avaliação](avaliacao-facial.md) usa `scripts/avaliar_rostos.py` para medir erros e latência com conjuntos autorizados e separados. `scripts/testar_rosto.py` ajuda no diagnóstico do giro, mas não substitui esse levantamento.
+
+## Ponto de acesso facial (0.18)
+
+A Visão geral tem um **ponto de acesso** operado por uma sessão de administrador no
+computador da câmera. O fluxo de ponta a ponta é:
+
+1. A pessoa cadastra o próprio rosto em **Conta › Meu acesso pela porta** (identidade
+   vinculada à conta pelo administrador) ou pelo cadastro conduzido em Identidades.
+2. O operador liga a câmera e seleciona **Reconhecer e liberar**. O navegador envia uma
+   foto de frente e as fotos do giro sorteado; o servidor usa o pipeline OpenCV local.
+3. O servidor confere movimento, similaridade, ambiguidade e, para a identidade
+   encontrada, consentimento, retenção, ativação, conta vinculada e horário.
+4. Só então o controlador aplica as regras da porta (dispositivo ligado, porta fechada)
+   e libera a trava por **3 segundos virtuais**. A trava volta a engatar sozinha ao fim
+   do prazo; **Travar agora** engata imediatamente.
+5. A tela mostra **Acesso liberado** ou **Acesso negado** com o motivo, a contagem até a
+   trava engatar e as decisões recentes. O histórico registra cada decisão.
+
+Qualquer outro desfecho mantém a trava engatada e é registrado (fonte `recognition`):
+
+| Situação | Código na resposta | Evento |
+|---|---|---|
+| Rosto desconhecido / nenhum cadastro | `no_match`, `no_faces_enrolled` | `recognition_no_match` |
+| Parecido com duas identidades | `ambiguous` | `recognition_ambiguous` |
+| Movimento ausente ou rosto trocado | `liveness_failed`, `face_changed` | mesmo nome |
+| Revogada, vencida, desativada, conta desativada, fora do horário | `consent_revoked`, `retention_expired`, `identity_inactive`, `account_inactive`, `outside_schedule` | `recognition_denied` |
+| Sem rosto, dois rostos, longe, tremida, imagem inválida | `no_face`, `multiple_faces`, `face_too_small`, `blurry`, `invalid_image` | `recognition_capture_failed` |
+| Tentativa cancelada / desafio vencido ou reutilizado | `challenge_expired` | `recognition_cancelled` (info) / `recognition_expired` |
+| Muitas tentativas | `rate_limited` | `recognition_rate_limited` |
+| Modelos ausentes / falha do OpenCV | `engine_unavailable` (503) / `engine_error` (503) | `recognition_unavailable` / `recognition_error` |
+| Sessão do operador encerrada durante a análise | 401/403/404 | `recognition_session_changed` |
+| Porta aberta ou dispositivo desligado | `door_open`, `device_powered_off`, ... | `recognition_denied` |
+
+Os eventos citam apenas `Identidade #n`, o código do motivo e, quando liberado, a
+similaridade; nunca imagens, vetores ou apelidos. Toda resposta traz `decision`
+(`granted`, `code`, `title`, `lock`, `release_seconds`) para a interface.
+
+**Uso normal × testes.** `create_app()` sem argumentos (como o `uvicorn` faz) sempre
+cria `OpenCVFaceEngine` com os modelos de `data/models`. Só os testes automatizados
+injetam motores substitutos; eles aparecem como `engine_kind: "test_double"` em
+`/api/faces/status`, "Motor de teste ativo" no Diagnóstico e um aviso no ponto de acesso.
+Sem modelos, o motor fica indisponível e a porta **não** libera por rosto (falha fechada).
 
 ## Privacidade e segurança
 

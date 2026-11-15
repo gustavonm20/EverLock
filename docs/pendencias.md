@@ -18,3 +18,15 @@ Itens que dependem de uma ação sua. Marque aqui o que for resolvendo e me avis
 | 3 | Notificações no n8n | Criar o fluxo com o nó Webhook, preencher `EVERLOCK_WEBHOOK_URL` e `EVERLOCK_WEBHOOK_SECRET` e usar "Enviar notificação de teste" em Atividade | [notifications.md](notifications.md) |
 | 6 | Cópia de segurança | Dar dois cliques em `backup.cmd` e guardar o arquivo `.elbak` e a senha fora do computador | [backup.md](backup.md) |
 | 7 | Aceites do planejamento | Revisar consentimento registrado pela própria pessoa e pedir a outra pessoa para executar o roteiro integrado; a automação já valida as regras, não substitui o ensaio humano | [planning.md](planning.md), [cenarios-integrados.md](cenarios-integrados.md) |
+
+## Situação após a 0.18.0 (local, 15/11/2026)
+
+- A 0.18.0 permite que a própria pessoa registre o aceite e cadastre o rosto na sessão da
+  conta vinculada. Isso cobre a parte de software da pendência 7 (consentimento pela
+  própria pessoa), mas **não** a encerra: o aceite pelo grupo, com pessoas reais, segue em
+  aberto.
+- O fluxo reconhecimento → autorização → trava foi verificado só com testes automatizados
+  sintéticos. As pendências 1 (avaliação facial real) e o ensaio com câmera real continuam
+  abertas e não são exigidas para usar o simulador.
+- A 0.18.0 ainda não foi publicada: falta revisão, PR e CI no GitHub, e atualização manual
+  do Notion se o responsável autorizar.

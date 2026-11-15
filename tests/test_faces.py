@@ -281,9 +281,12 @@ def test_capture_problems_are_not_access_attempts(lab):
     invalid = {"challenge_id": challenge["challenge_id"], "front": "@@@",
                "turned": [b64("PESSOA:ana:1:0.3")]}
     assert client.post("/api/recognition/verify", json=invalid).status_code == 422
-    # Nada disso conta para o bloqueio nem vira evento de acesso recusado.
+    # Nada disso conta para o bloqueio nem consulta identidades, mas cada captura recusada
+    # fica no histórico como decisão (trava mantida), sem imagem nem vetor.
     assert verify(client, "PESSOA:ana:1").status_code == 200
-    assert "recognition_denied" not in client.get("/api/events?limit=20").text
+    events = client.get("/api/events?limit=20").text
+    assert "recognition_denied" not in events
+    assert client.get("/api/events?type=recognition_capture_failed").json()["items"]
 
 
 def test_movement_challenge_is_required_single_use_and_checks_the_same_face(lab):

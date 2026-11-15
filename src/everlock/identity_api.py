@@ -35,6 +35,7 @@ class IdentityCreate(BaseModel):
     end: str = "24:00"
     consent: bool = Field(strict=True)
     consent_version: str = Field(min_length=1, max_length=32)
+    account_id: int | None = Field(default=None, ge=1, le=2**31 - 1, strict=True)
 
     @field_validator("label")
     @classmethod
@@ -77,6 +78,11 @@ class IdentityUpdate(BaseModel):
     @property
     def schedule(self):
         return None if self.days is None else (self.days, self.start, self.end)
+
+
+class AccountLink(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    account_id: int | None = Field(ge=1, le=2**31 - 1, strict=True)
 
 
 class RecognitionRequest(BaseModel):
@@ -134,8 +140,11 @@ def decode_image(text: str) -> bytes:
 
 
 def face_failure(error: FaceError) -> JSONResponse:
+    from everlock.recognition import decision
+
     status = 503 if error.code == "engine_unavailable" else 422
-    return JSONResponse({"code": error.code, "message": error.message}, status_code=status)
+    return JSONResponse({"ok": False, "code": error.code, "message": error.message,
+                         "decision": decision(error.code)}, status_code=status)
 
 
 @router.get("/faces/status")
@@ -168,7 +177,16 @@ def create_identity(payload: IdentityCreate, request: Request):
         return request.app.state.identities.create(
             label=payload.label, retention_days=payload.retention_days, days=payload.days,
             start=payload.start, end=payload.end, consent_version=payload.consent_version,
-            actor=user["username"],
+            actor=user["username"], account_id=payload.account_id,
+        )
+
+
+@router.put("/identities/{identity_id}/account")
+def link_identity_account(payload: AccountLink, request: Request,
+                          identity_id: int = IdentityId):
+    with authorized(request, admin=True) as user:
+        return request.app.state.identities.link_account(
+            identity_id, payload.account_id, user["username"],
         )
 
 
@@ -230,14 +248,14 @@ def enroll_face(payload: FaceEnrollment, request: Request, identity_id: int = Id
 
 @router.post("/recognition/verify")
 def verify_face(payload: FaceVerification, request: Request):
-    with authorized(request, admin=True):
+    with authorized(request, admin=True) as user:
         front = decode_image(payload.front)
         turned = [decode_image(item) for item in payload.turned]
         session_id = token_hash(request.cookies[COOKIE])
     try:
         code, body = request.app.state.recognition.verify(
             payload.challenge_id, front, turned, session_id=session_id,
-            authorize=lambda: authorized(request, admin=True),
+            authorize=lambda: authorized(request, admin=True), actor=user["username"],
         )
     except FaceError as error:
         return face_failure(error)
